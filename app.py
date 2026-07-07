@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 # App settings
 st.set_page_config(
-    page_title="CTA Article Recommender Pro*2",
+    page_title="Retraction Article Detector Pro*2",
     page_icon="logo.jpg",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -364,7 +364,7 @@ st.markdown("""
 
 OPENALEX_BASE_URL = "https://api.openalex.org"
 MAILTO = "your-email@example.com"
-POLITE_POOL_HEADER = {'User-Agent': f'CTA-App (mailto:{MAILTO})'}
+POLITE_POOL_HEADER = {'User-Agent': f'Retraction-App (mailto:{MAILTO})'}
 
 RATE_LIMIT_PER_SECOND = 8
 BATCH_SIZE = 50
@@ -515,7 +515,7 @@ def clear_old_cache():
     conn.close()
 
 # ============================================================================
-# YEAR PARSING FUNCTIONS (ADDED)
+# YEAR PARSING FUNCTIONS
 # ============================================================================
 
 def parse_year_filter(year_input: str) -> List[int]:
@@ -627,6 +627,91 @@ def calculate_toc_indices(total_count: int) -> List[int]:
             indices.append(i)
     
     return sorted(indices)
+
+# ============================================================================
+# COUNTRY PARSING FUNCTIONS
+# ============================================================================
+
+def parse_country_filter(country_input: str) -> List[str]:
+    """
+    Parse country filter string.
+    Examples:
+    "RU" -> ["RU"]
+    "IT+RU" -> ["IT", "RU"]
+    "IT+RU+CN" -> ["IT", "RU", "CN"]
+    "US" -> ["US"]
+    """
+    if not country_input or country_input.strip() == "":
+        return []
+    
+    # Split by + or comma
+    countries = re.split(r'[+,]', country_input)
+    countries = [c.strip().upper() for c in countries if c.strip()]
+    
+    # Filter to valid country codes (2-letter codes)
+    valid_countries = [c for c in countries if len(c) == 2 and c.isalpha()]
+    
+    return valid_countries
+
+def get_country_name(country_code: str) -> str:
+    """
+    Get full country name from country code.
+    """
+    country_names = {
+        'AF': 'Afghanistan', 'AL': 'Albania', 'DZ': 'Algeria', 'AD': 'Andorra',
+        'AO': 'Angola', 'AG': 'Antigua and Barbuda', 'AR': 'Argentina', 'AM': 'Armenia',
+        'AU': 'Australia', 'AT': 'Austria', 'AZ': 'Azerbaijan', 'BS': 'Bahamas',
+        'BH': 'Bahrain', 'BD': 'Bangladesh', 'BB': 'Barbados', 'BY': 'Belarus',
+        'BE': 'Belgium', 'BZ': 'Belize', 'BJ': 'Benin', 'BT': 'Bhutan',
+        'BO': 'Bolivia', 'BA': 'Bosnia and Herzegovina', 'BW': 'Botswana',
+        'BR': 'Brazil', 'BN': 'Brunei', 'BG': 'Bulgaria', 'BF': 'Burkina Faso',
+        'BI': 'Burundi', 'KH': 'Cambodia', 'CM': 'Cameroon', 'CA': 'Canada',
+        'CV': 'Cape Verde', 'CF': 'Central African Republic', 'TD': 'Chad',
+        'CL': 'Chile', 'CN': 'China', 'CO': 'Colombia', 'KM': 'Comoros',
+        'CG': 'Congo', 'CD': 'DR Congo', 'CR': 'Costa Rica', 'HR': 'Croatia',
+        'CU': 'Cuba', 'CY': 'Cyprus', 'CZ': 'Czech Republic', 'DK': 'Denmark',
+        'DJ': 'Djibouti', 'DM': 'Dominica', 'DO': 'Dominican Republic',
+        'EC': 'Ecuador', 'EG': 'Egypt', 'SV': 'El Salvador', 'GQ': 'Equatorial Guinea',
+        'ER': 'Eritrea', 'EE': 'Estonia', 'ET': 'Ethiopia', 'FJ': 'Fiji',
+        'FI': 'Finland', 'FR': 'France', 'GA': 'Gabon', 'GM': 'Gambia',
+        'GE': 'Georgia', 'DE': 'Germany', 'GH': 'Ghana', 'GR': 'Greece',
+        'GD': 'Grenada', 'GT': 'Guatemala', 'GN': 'Guinea', 'GW': 'Guinea-Bissau',
+        'GY': 'Guyana', 'HT': 'Haiti', 'HN': 'Honduras', 'HU': 'Hungary',
+        'IS': 'Iceland', 'IN': 'India', 'ID': 'Indonesia', 'IR': 'Iran',
+        'IQ': 'Iraq', 'IE': 'Ireland', 'IL': 'Israel', 'IT': 'Italy',
+        'JM': 'Jamaica', 'JP': 'Japan', 'JO': 'Jordan', 'KZ': 'Kazakhstan',
+        'KE': 'Kenya', 'KI': 'Kiribati', 'KP': 'North Korea', 'KR': 'South Korea',
+        'KW': 'Kuwait', 'KG': 'Kyrgyzstan', 'LA': 'Laos', 'LV': 'Latvia',
+        'LB': 'Lebanon', 'LS': 'Lesotho', 'LR': 'Liberia', 'LY': 'Libya',
+        'LI': 'Liechtenstein', 'LT': 'Lithuania', 'LU': 'Luxembourg', 'MG': 'Madagascar',
+        'MW': 'Malawi', 'MY': 'Malaysia', 'MV': 'Maldives', 'ML': 'Mali',
+        'MT': 'Malta', 'MH': 'Marshall Islands', 'MR': 'Mauritania', 'MU': 'Mauritius',
+        'MX': 'Mexico', 'FM': 'Micronesia', 'MD': 'Moldova', 'MC': 'Monaco',
+        'MN': 'Mongolia', 'ME': 'Montenegro', 'MA': 'Morocco', 'MZ': 'Mozambique',
+        'MM': 'Myanmar', 'NA': 'Namibia', 'NR': 'Nauru', 'NP': 'Nepal',
+        'NL': 'Netherlands', 'NZ': 'New Zealand', 'NI': 'Nicaragua', 'NE': 'Niger',
+        'NG': 'Nigeria', 'NO': 'Norway', 'OM': 'Oman', 'PK': 'Pakistan',
+        'PW': 'Palau', 'PA': 'Panama', 'PG': 'Papua New Guinea', 'PY': 'Paraguay',
+        'PE': 'Peru', 'PH': 'Philippines', 'PL': 'Poland', 'PT': 'Portugal',
+        'QA': 'Qatar', 'RO': 'Romania', 'RU': 'Russia', 'RW': 'Rwanda',
+        'KN': 'Saint Kitts and Nevis', 'LC': 'Saint Lucia', 'VC': 'Saint Vincent',
+        'WS': 'Samoa', 'SM': 'San Marino', 'ST': 'Sao Tome and Principe',
+        'SA': 'Saudi Arabia', 'SN': 'Senegal', 'RS': 'Serbia', 'SC': 'Seychelles',
+        'SL': 'Sierra Leone', 'SG': 'Singapore', 'SK': 'Slovakia', 'SI': 'Slovenia',
+        'SB': 'Solomon Islands', 'SO': 'Somalia', 'ZA': 'South Africa',
+        'SS': 'South Sudan', 'ES': 'Spain', 'LK': 'Sri Lanka', 'SD': 'Sudan',
+        'SR': 'Suriname', 'SZ': 'Swaziland', 'SE': 'Sweden', 'CH': 'Switzerland',
+        'SY': 'Syria', 'TW': 'Taiwan', 'TJ': 'Tajikistan', 'TZ': 'Tanzania',
+        'TH': 'Thailand', 'TG': 'Togo', 'TO': 'Tonga', 'TT': 'Trinidad and Tobago',
+        'TN': 'Tunisia', 'TR': 'Turkey', 'TM': 'Turkmenistan', 'TV': 'Tuvalu',
+        'UG': 'Uganda', 'UA': 'Ukraine', 'AE': 'United Arab Emirates',
+        'GB': 'United Kingdom', 'US': 'United States', 'UY': 'Uruguay',
+        'UZ': 'Uzbekistan', 'VU': 'Vanuatu', 'VA': 'Vatican City',
+        'VE': 'Venezuela', 'VN': 'Vietnam', 'YE': 'Yemen', 'ZM': 'Zambia',
+        'ZW': 'Zimbabwe'
+    }
+    
+    return country_names.get(country_code.upper(), country_code)
 
 # ============================================================================
 # ASYNCIO + AIOHTTP CLIENT
@@ -759,6 +844,153 @@ class OpenAlexAsyncClient:
             cache_work(doi, data)
         
         return data
+    
+    async def fetch_retraction_notices(self, years: List[int], 
+                                       progress_callback=None) -> List[dict]:
+        """
+        Fetch retraction notices (erratum type with Retraction in title).
+        """
+        all_works = []
+        cursor = "*"
+        page_count = 0
+        total_count = 0
+        
+        # Build filter string: type erratum + years
+        years_str = "|".join(map(str, years))
+        filter_str = f"type:erratum,publication_year:{years_str}"
+        
+        logger.info(f"Fetching retraction notices for years {years}")
+        
+        try:
+            while True:
+                page_count += 1
+                
+                params = {
+                    "filter": filter_str,
+                    "per-page": CURSOR_PAGE_SIZE,
+                    "cursor": cursor,
+                    "mailto": MAILTO
+                }
+                
+                url = f"{OPENALEX_BASE_URL}/works"
+                response = requests.get(url, params=params, headers=POLITE_POOL_HEADER, timeout=60)
+                
+                if response.status_code != 200:
+                    logger.error(f"Error fetching retraction notices: {response.status_code}")
+                    break
+                
+                data = response.json()
+                
+                if page_count == 1:
+                    total_count = data.get('meta', {}).get('count', 0)
+                    logger.info(f"Total retraction notices found: {total_count}")
+                    
+                    if total_count == 0:
+                        return []
+                
+                works = data.get('results', [])
+                if not works:
+                    break
+                
+                # Filter for Retraction/Retracted in title or display_name
+                filtered_works = []
+                for work in works:
+                    title = work.get('title', '')
+                    display_name = work.get('display_name', '')
+                    if ('Retraction' in title or 'Retracted' in title or 
+                        'Retraction' in display_name or 'Retracted' in display_name):
+                        filtered_works.append(work)
+                
+                all_works.extend(filtered_works)
+                
+                if progress_callback and total_count > 0:
+                    progress = min(len(all_works) / total_count, 1.0)
+                    progress_callback(progress, len(all_works), page_count, total_count)
+                
+                logger.info(f"Page {page_count}: got {len(filtered_works)} retraction notices, total: {len(all_works)}/{total_count}")
+                
+                next_cursor = data.get('meta', {}).get('next_cursor')
+                if not next_cursor:
+                    break
+                
+                cursor = next_cursor
+                time.sleep(0.1)
+            
+            logger.info(f"Finished fetching retraction notices. Total: {len(all_works)}")
+            return all_works
+            
+        except Exception as e:
+            logger.error(f"Error in fetch_retraction_notices: {str(e)}")
+            return all_works
+    
+    async def fetch_retracted_articles(self, years: List[int],
+                                       progress_callback=None) -> List[dict]:
+        """
+        Fetch retracted articles (is_retracted: true).
+        """
+        all_works = []
+        cursor = "*"
+        page_count = 0
+        total_count = 0
+        
+        # Build filter string: is_retracted true + years
+        years_str = "|".join(map(str, years))
+        filter_str = f"is_retracted:true,publication_year:{years_str}"
+        
+        logger.info(f"Fetching retracted articles for years {years}")
+        
+        try:
+            while True:
+                page_count += 1
+                
+                params = {
+                    "filter": filter_str,
+                    "per-page": CURSOR_PAGE_SIZE,
+                    "cursor": cursor,
+                    "mailto": MAILTO
+                }
+                
+                url = f"{OPENALEX_BASE_URL}/works"
+                response = requests.get(url, params=params, headers=POLITE_POOL_HEADER, timeout=60)
+                
+                if response.status_code != 200:
+                    logger.error(f"Error fetching retracted articles: {response.status_code}")
+                    break
+                
+                data = response.json()
+                
+                if page_count == 1:
+                    total_count = data.get('meta', {}).get('count', 0)
+                    logger.info(f"Total retracted articles found: {total_count}")
+                    
+                    if total_count == 0:
+                        return []
+                
+                works = data.get('results', [])
+                if not works:
+                    break
+                
+                all_works.extend(works)
+                
+                if progress_callback and total_count > 0:
+                    progress = min(len(all_works) / total_count, 1.0)
+                    progress_callback(progress, len(all_works), page_count, total_count)
+                
+                logger.info(f"Page {page_count}: got {len(works)} retracted articles, total: {len(all_works)}/{total_count}")
+                
+                next_cursor = data.get('meta', {}).get('next_cursor')
+                if not next_cursor:
+                    break
+                
+                cursor = next_cursor
+                time.sleep(0.1)
+            
+            logger.info(f"Finished fetching retracted articles. Total: {len(all_works)}")
+            return all_works
+            
+        except Exception as e:
+            logger.error(f"Error in fetch_retracted_articles: {str(e)}")
+            return all_works
     
     async def fetch_all_works_by_topic(self, topic_id: str, years: List[int], 
                                        progress_callback=None) -> List[dict]:
@@ -897,6 +1129,48 @@ def fetch_works_by_dois_sync(dois: List[str]) -> Tuple[List[dict], int, int]:
     status_text.empty()
     
     return all_results, successful, failed
+
+def fetch_retraction_notices_sync(years: List[int]) -> List[dict]:
+    """
+    Fetch retraction notices for given years.
+    """
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    all_works = []
+    
+    def update_progress(progress, count, page, total):
+        progress_bar.progress(progress)
+        status_text.text(f"Page {page}: {count}/{total} retraction notices fetched")
+    
+    async def fetch():
+        async with OpenAlexAsyncClient() as client:
+            return await client.fetch_retraction_notices(years, update_progress)
+    
+    result = run_async(fetch())
+    progress_bar.empty()
+    status_text.empty()
+    return result
+
+def fetch_retracted_articles_sync(years: List[int]) -> List[dict]:
+    """
+    Fetch retracted articles for given years.
+    """
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    all_works = []
+    
+    def update_progress(progress, count, page, total):
+        progress_bar.progress(progress)
+        status_text.text(f"Page {page}: {count}/{total} retracted articles fetched")
+    
+    async def fetch():
+        async with OpenAlexAsyncClient() as client:
+            return await client.fetch_retracted_articles(years, update_progress)
+    
+    result = run_async(fetch())
+    progress_bar.empty()
+    status_text.empty()
+    return result
 
 def fetch_all_works_by_topic_sync(topic_id: str, years: List[int]) -> List[dict]:
     """
@@ -1050,6 +1324,257 @@ def extract_numeric_from_doi(doi: str) -> int:
         return int(numbers[-1])
     
     return 0
+
+# ============================================================================
+# RETRACTION-SPECIFIC FUNCTIONS
+# ============================================================================
+
+def extract_clean_title_from_notice(notice_title: str) -> Optional[str]:
+    """
+    Extract the original article title from a retraction notice title.
+    Example:
+    "Retraction Notice to \"RETRACTED: The angiostatic molecule Multimerin 2 is processed by MMP-9 to allow sprouting angiogenesis\""
+    -> "The angiostatic molecule Multimerin 2 is processed by MMP-9 to allow sprouting angiogenesis"
+    """
+    if not notice_title:
+        return None
+    
+    # Remove common prefixes
+    prefixes = [
+        r'^Retraction Notice to\s*["\']?',
+        r'^Retraction:\s*',
+        r'^RETRACTION:\s*',
+        r'^Retracted:\s*',
+        r'^RETRACTED:\s*',
+        r'^Notice of Retraction:\s*',
+        r'^Retraction Notice:\s*',
+        r'^Editorial Retraction:\s*',
+        r'^Retraction of:\s*',
+        r'^Retraction for:\s*',
+        r'^Withdrawal Notice:\s*',
+        r'^Expression of Concern:\s*',
+        r'^Notice of Concern:\s*'
+    ]
+    
+    cleaned_title = notice_title
+    
+    for prefix in prefixes:
+        cleaned_title = re.sub(prefix, '', cleaned_title, flags=re.IGNORECASE)
+    
+    # Remove quotes around the title
+    cleaned_title = re.sub(r'^["\']+|["\']+$', '', cleaned_title)
+    
+    # Remove "RETRACTED:" prefix if present
+    cleaned_title = re.sub(r'^RETRACTED:\s*', '', cleaned_title, flags=re.IGNORECASE)
+    
+    # Remove any leading/trailing whitespace
+    cleaned_title = cleaned_title.strip()
+    
+    # If the cleaned title is still too similar to the original with "RETRACTED" prefix, try to extract the part after the colon
+    if 'RETRACTED:' in cleaned_title:
+        parts = cleaned_title.split('RETRACTED:', 1)
+        if len(parts) > 1:
+            cleaned_title = parts[1].strip()
+    
+    return cleaned_title if cleaned_title else None
+
+def find_matching_retracted_article(notice_title: str, retracted_articles: List[dict]) -> Optional[dict]:
+    """
+    Find the retracted article that matches a retraction notice by title similarity.
+    """
+    if not notice_title or not retracted_articles:
+        return None
+    
+    # Extract clean title from notice
+    clean_title = extract_clean_title_from_notice(notice_title)
+    if not clean_title:
+        return None
+    
+    # Normalize clean title for comparison
+    clean_title_norm = clean_title.lower().strip()
+    clean_title_norm = re.sub(r'\s+', ' ', clean_title_norm)
+    
+    # Try to find exact match first
+    for article in retracted_articles:
+        article_title = article.get('title', '')
+        if not article_title:
+            continue
+        
+        article_title_norm = article_title.lower().strip()
+        article_title_norm = re.sub(r'\s+', ' ', article_title_norm)
+        
+        # Remove "RETRACTED:" prefix if present
+        article_title_norm = re.sub(r'^retracted:\s*', '', article_title_norm)
+        
+        # Check if clean title is in article title or vice versa
+        if clean_title_norm in article_title_norm or article_title_norm in clean_title_norm:
+            return article
+        
+        # Check if the common part matches (after removing prefixes)
+        # Remove "RETRACTED:" from article title if present
+        article_title_clean = re.sub(r'^RETRACTED:\s*', '', article_title, flags=re.IGNORECASE)
+        article_title_clean_norm = article_title_clean.lower().strip()
+        article_title_clean_norm = re.sub(r'\s+', ' ', article_title_clean_norm)
+        
+        if clean_title_norm in article_title_clean_norm or article_title_clean_norm in clean_title_norm:
+            return article
+    
+    # If no exact match, try partial match with key phrases
+    # Extract key words from clean title (exclude common words)
+    stop_words = {'the', 'of', 'and', 'for', 'in', 'on', 'at', 'to', 'by', 'with', 'from', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being'}
+    key_words = [word for word in clean_title_norm.split() if word not in stop_words and len(word) > 3]
+    
+    if len(key_words) >= 3:
+        for article in retracted_articles:
+            article_title = article.get('title', '')
+            if not article_title:
+                continue
+            
+            article_title_norm = article_title.lower().strip()
+            article_title_norm = re.sub(r'\s+', ' ', article_title_norm)
+            article_title_norm = re.sub(r'^retracted:\s*', '', article_title_norm)
+            
+            # Count how many key words appear in the article title
+            matches = sum(1 for word in key_words if word in article_title_norm)
+            if matches >= len(key_words) * 0.6:  # At least 60% of key words match
+                return article
+    
+    return None
+
+def combine_retracted_with_notice(retracted_article: dict, notice: dict) -> dict:
+    """
+    Combine a retracted article with its retraction notice into a single combined card.
+    """
+    combined = {}
+    
+    # Copy retracted article data
+    combined['retracted'] = retracted_article
+    combined['notice'] = notice
+    
+    # Extract common fields from retracted article
+    combined['doi_retracted'] = retracted_article.get('doi', '').replace('https://doi.org/', '')
+    combined['doi_notice'] = notice.get('doi', '').replace('https://doi.org/', '')
+    
+    # Use the title from the retracted article (cleaner)
+    combined['title'] = retracted_article.get('title', '')
+    
+    # Use publication info from retracted article
+    combined['publication_year'] = retracted_article.get('publication_year', '')
+    combined['publication_date'] = retracted_article.get('publication_date', '')
+    
+    # Extract authors from retracted article (all authors)
+    combined['authors'] = retracted_article.get('authorships', [])
+    
+    # Extract journal and publisher info from retracted article
+    primary_location = retracted_article.get('primary_location', {})
+    source = primary_location.get('source', {}) if primary_location else {}
+    combined['journal_name'] = source.get('display_name', '')
+    combined['publisher'] = source.get('host_organization_name', '')
+    if not combined['publisher']:
+        combined['publisher'] = source.get('publisher', '')
+    
+    # Extract biblio info
+    biblio = retracted_article.get('biblio', {})
+    combined['volume'] = biblio.get('volume', '')
+    combined['issue'] = biblio.get('issue', '')
+    combined['first_page'] = biblio.get('first_page', '')
+    combined['last_page'] = biblio.get('last_page', '')
+    
+    # Format pages
+    if combined['first_page'] and combined['last_page'] and combined['first_page'] != combined['last_page']:
+        combined['pages'] = f"{combined['first_page']}-{combined['last_page']}"
+    elif combined['first_page']:
+        combined['pages'] = combined['first_page']
+    elif combined['last_page']:
+        combined['pages'] = combined['last_page']
+    else:
+        combined['pages'] = ''
+    
+    # Extract notice-specific info
+    combined['notice_publication_year'] = notice.get('publication_year', '')
+    combined['notice_publication_date'] = notice.get('publication_date', '')
+    
+    # Notice journal
+    notice_primary_location = notice.get('primary_location', {})
+    notice_source = notice_primary_location.get('source', {}) if notice_primary_location else {}
+    combined['notice_journal'] = notice_source.get('display_name', '')
+    combined['notice_publisher'] = notice_source.get('host_organization_name', '')
+    if not combined['notice_publisher']:
+        combined['notice_publisher'] = notice_source.get('publisher', '')
+    
+    # Notice biblio
+    notice_biblio = notice.get('biblio', {})
+    combined['notice_volume'] = notice_biblio.get('volume', '')
+    combined['notice_issue'] = notice_biblio.get('issue', '')
+    combined['notice_first_page'] = notice_biblio.get('first_page', '')
+    combined['notice_last_page'] = notice_biblio.get('last_page', '')
+    
+    if combined['notice_first_page'] and combined['notice_last_page'] and combined['notice_first_page'] != combined['notice_last_page']:
+        combined['notice_pages'] = f"{combined['notice_first_page']}-{combined['notice_last_page']}"
+    elif combined['notice_first_page']:
+        combined['notice_pages'] = combined['notice_first_page']
+    elif combined['notice_last_page']:
+        combined['notice_pages'] = combined['notice_last_page']
+    else:
+        combined['notice_pages'] = ''
+    
+    # Extract countries from authorships of retracted article
+    countries = set()
+    for authorship in retracted_article.get('authorships', []):
+        for institution in authorship.get('institutions', []):
+            country = institution.get('country_code', '')
+            if country:
+                countries.add(country)
+    combined['countries'] = list(countries)
+    
+    # Extract all affiliations from retracted article
+    affiliations = []
+    for authorship in retracted_article.get('authorships', []):
+        for institution in authorship.get('institutions', []):
+            name = institution.get('display_name', '')
+            if name:
+                affiliations.append(name)
+    combined['affiliations'] = list(set(affiliations))
+    
+    return combined
+
+def extract_author_name(author: dict) -> str:
+    """
+    Extract full author name from authorship data.
+    """
+    display_name = author.get('display_name', '')
+    if display_name:
+        return display_name
+    return author.get('raw_author_name', '')
+
+def extract_author_lastname_firstinitial(author_name: str) -> str:
+    """
+    Extract last name and first initial from author name.
+    Example: "Eva Andreuzzi" -> "Andreuzzi E."
+    """
+    if not author_name:
+        return ''
+    
+    parts = author_name.split()
+    if len(parts) >= 2:
+        last_name = parts[-1]
+        first_initial = parts[0][0] if parts[0] else ''
+        return f"{last_name} {first_initial}."
+    else:
+        return author_name
+
+def is_article_from_selected_countries(combined_article: dict, selected_countries: List[str]) -> bool:
+    """
+    Check if an article has at least one author from any of the selected countries.
+    """
+    if not selected_countries:
+        return True
+    
+    article_countries = combined_article.get('countries', [])
+    for country in article_countries:
+        if country.upper() in selected_countries:
+            return True
+    return False
 
 # ============================================================================
 # ENRICHMENT FUNCTIONS
@@ -1271,447 +1796,289 @@ def enrich_work_data_full(work: dict, current_year: int = None) -> dict:
     
     return enriched
 
+def enrich_combined_article(combined: dict) -> dict:
+    """
+    Enrich a combined article with formatted data for display and PDF generation.
+    """
+    if not combined:
+        return {}
+    
+    retracted = combined.get('retracted', {})
+    notice = combined.get('notice', {})
+    
+    # Extract all authors from retracted article
+    authors = []
+    for authorship in retracted.get('authorships', []):
+        author = authorship.get('author', {})
+        author_name = author.get('display_name', '')
+        if author_name:
+            authors.append(author_name)
+    authors_str = ', '.join(authors) if authors else 'Authors not specified'
+    
+    # Extract affiliations
+    affiliations = set()
+    for authorship in retracted.get('authorships', []):
+        for inst in authorship.get('institutions', []):
+            inst_name = inst.get('display_name', '')
+            if inst_name:
+                affiliations.add(inst_name)
+    affiliations_str = ' / '.join(affiliations) if affiliations else 'No affiliations specified'
+    
+    # Extract countries
+    countries = set()
+    for authorship in retracted.get('authorships', []):
+        for inst in authorship.get('institutions', []):
+            country = inst.get('country_code', '')
+            if country:
+                countries.add(country)
+    countries_list = list(countries)
+    
+    # Format pages for retracted article
+    biblio = retracted.get('biblio', {})
+    first_page = biblio.get('first_page', '')
+    last_page = biblio.get('last_page', '')
+    if first_page and last_page and first_page != last_page:
+        pages = f"{first_page}-{last_page}"
+    elif first_page:
+        pages = first_page
+    elif last_page:
+        pages = last_page
+    else:
+        pages = ''
+    
+    # Notice info
+    notice_biblio = notice.get('biblio', {})
+    notice_first_page = notice_biblio.get('first_page', '')
+    notice_last_page = notice_biblio.get('last_page', '')
+    if notice_first_page and notice_last_page and notice_first_page != notice_last_page:
+        notice_pages = f"{notice_first_page}-{notice_last_page}"
+    elif notice_first_page:
+        notice_pages = notice_first_page
+    elif notice_last_page:
+        notice_pages = notice_last_page
+    else:
+        notice_pages = ''
+    
+    # Get journal info from retracted article    retracted_primary_location = retracted.get('primary_location', {})
+    retracted_source = retracted_primary_location.get('source', {}) if retracted_primary_location else {}
+    retracted_journal = retracted_source.get('display_name', '')
+    retracted_publisher = retracted_source.get('host_organization_name', '')
+    if not retracted_publisher:
+        retracted_publisher = retracted_source.get('publisher', '')
+    
+    # Get journal info from notice
+    notice_primary_location = notice.get('primary_location', {})
+    notice_source = notice_primary_location.get('source', {}) if notice_primary_location else {}
+    notice_journal = notice_source.get('display_name', '')
+    notice_publisher = notice_source.get('host_organization_name', '')
+    if not notice_publisher:
+        notice_publisher = notice_source.get('publisher', '')
+    
+    enriched = {
+        'doi_retracted': combined.get('doi_retracted', ''),
+        'doi_notice': combined.get('doi_notice', ''),
+        'doi_retracted_url': f"https://doi.org/{combined.get('doi_retracted', '')}" if combined.get('doi_retracted') else '',
+        'doi_notice_url': f"https://doi.org/{combined.get('doi_notice', '')}" if combined.get('doi_notice') else '',
+        'title': combined.get('title', 'No title'),
+        'publication_year': combined.get('publication_year', ''),
+        'publication_date': combined.get('publication_date', ''),
+        'authors': authors_str,
+        'authors_list': authors,
+        'affiliations': list(affiliations),
+        'affiliations_str': affiliations_str,
+        'countries': countries_list,
+        'journal_name': retracted_journal,
+        'publisher': retracted_publisher,
+        'volume': combined.get('volume', ''),
+        'issue': combined.get('issue', ''),
+        'pages': pages,
+        'notice_journal': notice_journal,
+        'notice_publisher': notice_publisher,
+        'notice_volume': combined.get('notice_volume', ''),
+        'notice_issue': combined.get('notice_issue', ''),
+        'notice_pages': notice_pages,
+        'notice_publication_year': combined.get('notice_publication_year', ''),
+        'notice_publication_date': combined.get('notice_publication_date', ''),
+        'raw_retracted': retracted,
+        'raw_notice': notice
+    }
+    
+    return enriched
+
 # ============================================================================
-# HIERARCHICAL GROUPING FUNCTIONS WITH CACHING
+# HIERARCHICAL GROUPING FUNCTIONS FOR RETRACTION REPORTS
 # ============================================================================
 
 @st.cache_data(ttl=3600)
-def cached_group_articles_by_publisher_journal(articles_tuple: tuple, sort_option: str = 'alphabetical') -> Dict[str, Dict[str, List[dict]]]:
+def cached_group_by_country_affiliation(combined_articles_tuple: tuple, selected_countries: tuple) -> Dict[str, Dict[str, List[dict]]]:
     """
-    Cached version of group_articles_by_publisher_journal with sort option.
+    Group combined articles by Country -> Affiliation.
+    Each article appears under each country it has authors from.
     """
-    articles = list(articles_tuple)
-    return group_articles_by_publisher_journal(articles, sort_option)
+    combined_articles = list(combined_articles_tuple)
+    selected_countries_list = list(selected_countries) if selected_countries else []
+    return group_by_country_affiliation(combined_articles, selected_countries_list)
 
 @st.cache_data(ttl=3600)
-def cached_group_articles_by_country_affiliation(articles_tuple: tuple, sort_option: str = 'alphabetical') -> Dict[str, Dict[str, List[dict]]]:
+def cached_group_by_author(combined_articles_tuple: tuple) -> Dict[str, List[dict]]:
     """
-    Cached version of group_articles_by_country_affiliation with sort option.
+    Group combined articles by author (last name + first initial).
+    Each article appears under each author.
     """
-    articles = list(articles_tuple)
-    return group_articles_by_country_affiliation(articles, sort_option)
+    combined_articles = list(combined_articles_tuple)
+    return group_by_author(combined_articles)
 
 @st.cache_data(ttl=3600)
-def cached_sort_articles_by_citations(articles_tuple: tuple, sort_by: str = 'citations_per_year') -> List[dict]:
+def cached_group_by_publisher_journal(combined_articles_tuple: tuple) -> Dict[str, Dict[str, List[dict]]]:
     """
-    Cached version of sort_articles_by_citations with sort option.
+    Group combined articles by Publisher -> Journal.
     """
-    articles = list(articles_tuple)
-    return sort_articles_by_citations(articles, sort_by)
+    combined_articles = list(combined_articles_tuple)
+    return group_by_publisher_journal(combined_articles)
 
-def group_articles_by_publisher_journal(articles: List[dict], sort_option: str = 'alphabetical') -> Dict[str, Dict[str, List[dict]]]:
-    """
-    Group articles by Publisher -> Journal.
-    Sorted according to sort_option: 'alphabetical' or 'by_count'.
-    """
-    hierarchy = defaultdict(lambda: defaultdict(list))
-    
-    for article in articles:
-        publisher = article.get('publisher', 'Unknown Publisher')
-        if publisher is None:
-            publisher = 'Unknown Publisher'
-        if isinstance(publisher, str):
-            if publisher.startswith('P') and publisher[1:].isdigit() or 'openalex.org/P' in publisher:
-                publisher_chain = article.get('publisher_chain', [])
-                if publisher_chain and len(publisher_chain) > 0:
-                    publisher = publisher_chain[0]
-                else:
-                    publisher = 'Unknown Publisher'
-        
-        journal = article.get('journal_name', 'Unknown Journal')
-        if journal is None:
-            journal = 'Unknown Journal'
-        hierarchy[publisher][journal].append(article)
-    
-    # Sort top-level publishers
-    if sort_option == 'by_count':
-        publisher_items = []
-        for publisher in hierarchy.keys():
-            if publisher is not None:
-                total_count = sum(len(articles) for articles in hierarchy[publisher].values())
-                publisher_items.append((publisher, total_count))
-        publisher_items.sort(key=lambda x: x[1], reverse=True)
-        sorted_publishers = [item[0] for item in publisher_items]
-    else:  # alphabetical
-        sorted_publishers = sorted([p for p in hierarchy.keys() if p is not None])
-    
-    sorted_hierarchy = {}
-    for publisher in sorted_publishers:
-        # Sort journals within each publisher
-        if sort_option == 'by_count':
-            journal_items = []
-            for journal in hierarchy[publisher].keys():
-                if journal is not None:
-                    journal_items.append((journal, len(hierarchy[publisher][journal])))
-            journal_items.sort(key=lambda x: x[1], reverse=True)
-            sorted_journals = [item[0] for item in journal_items]
-        else:  # alphabetical
-            sorted_journals = sorted([j for j in hierarchy[publisher].keys() if j is not None])
-        
-        sorted_hierarchy[publisher] = {}
-        for journal in sorted_journals:
-            sorted_articles = sorted(
-                hierarchy[publisher][journal],
-                key=lambda x: x.get('citations_per_year', 0) if x.get('citations_per_year') is not None else 0,
-                reverse=True
-            )
-            sorted_hierarchy[publisher][journal] = sorted_articles
-    
-    return sorted_hierarchy
-
-def group_articles_by_country_affiliation(articles: List[dict], sort_option: str = 'alphabetical') -> Dict[str, Dict[str, List[dict]]]:
+def group_by_country_affiliation(combined_articles: List[dict], selected_countries: List[str]) -> Dict[str, Dict[str, List[dict]]]:
     """
     Group articles by Country -> Affiliation.
-    An article can appear under multiple countries if it has authors from different countries.
-    Sorted according to sort_option: 'alphabetical' or 'by_count'.
+    Only includes articles that have at least one author from selected countries.
+    If selected_countries is empty, includes all articles.
     """
     hierarchy = defaultdict(lambda: defaultdict(list))
     
-    for article in articles:
-        country = article.get('country', 'Unknown')
-        if country is None:
-            country = 'Unknown'
+    # Filter articles by selected countries
+    filtered_articles = []
+    for article in combined_articles:
+        if not selected_countries:
+            filtered_articles.append(article)
+        else:
+            article_countries = article.get('countries', [])
+            for country in article_countries:
+                if country.upper() in selected_countries:
+                    filtered_articles.append(article)
+                    break
+    
+    # Group filtered articles by country -> affiliation
+    for article in filtered_articles:
+        countries = article.get('countries', [])
         affiliations = article.get('affiliations', ['Unknown Affiliation'])
+        
         if not affiliations:
             affiliations = ['Unknown Affiliation']
-        else:
-            affiliations = [aff for aff in affiliations if aff is not None]
-            if not affiliations:
-                affiliations = ['Unknown Affiliation']
         
-        for aff in affiliations:
-            hierarchy[country][aff].append(article)
+        for country in countries:
+            if selected_countries and country.upper() not in selected_countries:
+                continue
+            
+            country_name = get_country_name(country)
+            for aff in affiliations:
+                hierarchy[country_name][aff].append(article)
     
-    # Sort top-level countries
-    if sort_option == 'by_count':
-        country_items = []
-        for country in hierarchy.keys():
-            if country is not None:
-                total_count = sum(len(articles) for articles in hierarchy[country].values())
-                country_items.append((country, total_count))
-        country_items.sort(key=lambda x: x[1], reverse=True)
-        sorted_countries = [item[0] for item in country_items]
-    else:  # alphabetical
-        sorted_countries = sorted([c for c in hierarchy.keys() if c is not None])
-    
+    # Sort by number of articles in each country and affiliation
     sorted_hierarchy = {}
-    for country in sorted_countries:
-        # Sort affiliations within each country
-        if sort_option == 'by_count':
-            affiliation_items = []
-            for affiliation in hierarchy[country].keys():
-                if affiliation is not None:
-                    affiliation_items.append((affiliation, len(hierarchy[country][affiliation])))
-            affiliation_items.sort(key=lambda x: x[1], reverse=True)
-            sorted_affiliations = [item[0] for item in affiliation_items]
-        else:  # alphabetical
-            sorted_affiliations = sorted([a for a in hierarchy[country].keys() if a is not None])
-        
+    country_items = []
+    for country in hierarchy.keys():
+        total_count = sum(len(articles) for articles in hierarchy[country].values())
+        country_items.append((country, total_count))
+    country_items.sort(key=lambda x: x[1], reverse=True)
+    
+    for country, _ in country_items:
         sorted_hierarchy[country] = {}
-        for affiliation in sorted_affiliations:
+        affiliation_items = []
+        for affiliation in hierarchy[country].keys():
+            affiliation_items.append((affiliation, len(hierarchy[country][affiliation])))
+        affiliation_items.sort(key=lambda x: x[1], reverse=True)
+        
+        for affiliation, _ in affiliation_items:
+            # Sort articles within each affiliation by publication year (newest first)
             sorted_articles = sorted(
                 hierarchy[country][affiliation],
-                key=lambda x: x.get('citations_per_year', 0) if x.get('citations_per_year') is not None else 0,
+                key=lambda x: x.get('publication_year', 0) if x.get('publication_year') else 0,
                 reverse=True
             )
             sorted_hierarchy[country][affiliation] = sorted_articles
     
     return sorted_hierarchy
 
-def sort_articles_by_citations(articles: List[dict], sort_by: str = 'citations_per_year') -> List[dict]:
+def group_by_author(combined_articles: List[dict]) -> Dict[str, List[dict]]:
     """
-    Sort all articles by citations per year, total citations, or publication date.
+    Group articles by author (last name + first initial).
+    Each article appears under each author.
     """
-    if sort_by == 'total_citations':
-        return sorted(
+    author_groups = defaultdict(list)
+    
+    for article in combined_articles:
+        authors = article.get('authors_list', [])
+        if not authors:
+            continue
+        
+        for author in authors:
+            author_key = extract_author_lastname_firstinitial(author)
+            if author_key:
+                author_groups[author_key].append(article)
+    
+    # Sort authors by number of articles (descending)
+    sorted_author_groups = {}
+    author_items = []
+    for author, articles in author_groups.items():
+        author_items.append((author, articles))
+    author_items.sort(key=lambda x: len(x[1]), reverse=True)
+    
+    for author, articles in author_items:
+        # Sort articles within each author by publication year (newest first)
+        sorted_articles = sorted(
             articles,
-            key=lambda x: x.get('cited_by_count', 0) if x.get('cited_by_count') is not None else 0,
+            key=lambda x: x.get('publication_year', 0) if x.get('publication_year') else 0,
             reverse=True
         )
-    elif sort_by == 'publication_date':
-        return sorted(
-            articles,
-            key=lambda x: x.get('publication_date', '0000-00-00') if x.get('publication_date') else '0000-00-00',
-            reverse=True
-        )
-    else:  # default: citations_per_year
-        return sorted(
-            articles,
-            key=lambda x: x.get('citations_per_year', 0) if x.get('citations_per_year') is not None else 0,
-            reverse=True
-        )
+        sorted_author_groups[author] = sorted_articles
+    
+    return sorted_author_groups
 
-def sort_hierarchy_by_article_count(hierarchy: Dict) -> Dict:
+def group_by_publisher_journal(combined_articles: List[dict]) -> Dict[str, Dict[str, List[dict]]]:
     """
-    Sort hierarchy levels by number of articles (descending).
+    Group articles by Publisher -> Journal.
+    Uses publisher from retracted article.
     """
-    if not hierarchy:
-        return hierarchy
+    hierarchy = defaultdict(lambda: defaultdict(list))
     
+    for article in combined_articles:
+        publisher = article.get('publisher', 'Unknown Publisher')
+        if not publisher:
+            publisher = 'Unknown Publisher'
+        
+        journal = article.get('journal_name', 'Unknown Journal')
+        if not journal:
+            journal = 'Unknown Journal'
+        
+        hierarchy[publisher][journal].append(article)
+    
+    # Sort by number of articles
     sorted_hierarchy = {}
+    publisher_items = []
+    for publisher in hierarchy.keys():
+        total_count = sum(len(articles) for articles in hierarchy[publisher].values())
+        publisher_items.append((publisher, total_count))
+    publisher_items.sort(key=lambda x: x[1], reverse=True)
     
-    # Sort top-level keys by total article count
-    top_level_items = []
-    for key, value in hierarchy.items():
-        if isinstance(value, dict):
-            total_count = sum(len(articles) for articles in value.values())
-        else:
-            total_count = len(value)
-        top_level_items.append((key, value, total_count))
-    
-    top_level_items.sort(key=lambda x: x[2], reverse=True)
-    
-    for key, value, _ in top_level_items:
-        if isinstance(value, dict):
-            # Sort second-level items
-            second_level_items = []
-            for sub_key, articles in value.items():
-                second_level_items.append((sub_key, articles, len(articles)))
-            second_level_items.sort(key=lambda x: x[2], reverse=True)
-            
-            sorted_hierarchy[key] = {
-                sub_key: articles for sub_key, articles, _ in second_level_items
-            }
-        else:
-            sorted_hierarchy[key] = value
+    for publisher, _ in publisher_items:
+        sorted_hierarchy[publisher] = {}
+        journal_items = []
+        for journal in hierarchy[publisher].keys():
+            journal_items.append((journal, len(hierarchy[publisher][journal])))
+        journal_items.sort(key=lambda x: x[1], reverse=True)
+        
+        for journal, _ in journal_items:
+            # Sort articles within each journal by publication year (newest first)
+            sorted_articles = sorted(
+                hierarchy[publisher][journal],
+                key=lambda x: x.get('publication_year', 0) if x.get('publication_year') else 0,
+                reverse=True
+            )
+            sorted_hierarchy[publisher][journal] = sorted_articles
     
     return sorted_hierarchy
 
 # ============================================================================
-# SEARCH FUNCTIONS FOR STEP 6
-# ============================================================================
-
-def normalize_for_search(text: str) -> str:
-    """
-    Normalize text for search: lowercase, remove extra spaces.
-    """
-    if not text:
-        return ""
-    text = text.lower().strip()
-    text = re.sub(r'\s+', ' ', text)
-    return text
-
-def check_phrase_match(title: str, phrase: str) -> bool:
-    """
-    Check if exact phrase exists in title (case-insensitive).
-    """
-    if not title or not phrase:
-        return False
-    title_norm = normalize_for_search(title)
-    phrase_norm = normalize_for_search(phrase)
-    return phrase_norm in title_norm
-
-def check_and_match(title: str, terms: List[str]) -> bool:
-    """
-    Check if ALL terms exist in title (AND logic).
-    """
-    if not title or not terms:
-        return False
-    title_norm = normalize_for_search(title)
-    for term in terms:
-        term_norm = normalize_for_search(term)
-        if term_norm not in title_norm:
-            return False
-    return True
-
-def expand_wildcard(term: str) -> str:
-    """
-    Expand wildcard terms by removing trailing * for matching.
-    Example: "catal*" -> "catal"
-    """
-    if not term:
-        return term
-    # Remove trailing * and any following characters
-    term = re.sub(r'\*+$', '', term)
-    return term
-
-def expand_plural(term: str) -> List[str]:
-    """
-    Generate possible plural/singular forms of a term.
-    """
-    if not term:
-        return [term]
-    
-    term_lower = term.lower()
-    variants = [term_lower]
-    
-    # Common pluralization rules
-    if term_lower.endswith('s') and not term_lower.endswith(('ss', 'us', 'is')):
-        singular = term_lower[:-1]
-        if len(singular) >= 3:
-            variants.append(singular)
-    else:
-        # Add plural forms
-        if term_lower.endswith('y'):
-            variants.append(term_lower[:-1] + 'ies')
-        elif term_lower.endswith(('ch', 'sh', 'x', 'z')):
-            variants.append(term_lower + 'es')
-        elif not term_lower.endswith('s'):
-            variants.append(term_lower + 's')
-    
-    return list(set(variants))
-
-def check_term_match(title: str, term: str) -> bool:
-    """
-    Check if a single term matches the title with wildcard and plural support.
-    """
-    if not title or not term:
-        return False
-    
-    title_norm = normalize_for_search(title)
-    
-    # Check for wildcard (catal*)
-    if '*' in term:
-        base = expand_wildcard(term)
-        if base and base in title_norm:
-            return True
-        # Also try to match word prefixes
-        words = title_norm.split()
-        for word in words:
-            if word.startswith(base):
-                return True
-        return False
-    
-    # Check with plural forms
-    variants = expand_plural(term)
-    for variant in variants:
-        if variant in title_norm:
-            return True
-        # Also check as separate word
-        words = title_norm.split()
-        for word in words:
-            if variant == word:
-                return True
-            if word.startswith(variant) and len(word) >= len(variant):
-                # For partial matches like "catalytic" matching "catal"
-                pass
-    
-    return False
-
-def parse_search_query(query: str) -> Dict[str, Any]:
-    """
-    Parse search query and return structured search parameters.
-    Now supports OR operator.
-    Returns: {
-        'phrase': str or None,  # exact phrase in quotes
-        'and_terms': List[str],  # terms with AND logic
-        'or_groups': List[List[str]],  # groups of terms with OR logic
-        'has_wildcard': bool
-    }
-    """
-    if not query or not query.strip():
-        return {'phrase': None, 'and_terms': [], 'or_groups': [], 'has_wildcard': False}
-    
-    query = query.strip()
-    
-    # Check for quoted phrases
-    phrase_match = re.search(r'"([^"]+)"', query)
-    phrase = phrase_match.group(1) if phrase_match else None
-    
-    # Remove quoted parts
-    remaining = re.sub(r'"[^"]*"', '', query).strip()
-    
-    # Split by OR to get groups
-    or_groups = []
-    and_terms = []
-    has_wildcard = False
-    
-    if ' OR ' in remaining or ' or ' in remaining:
-        # Split by OR (case insensitive)
-        groups = re.split(r'\s+OR\s+', remaining, flags=re.IGNORECASE)
-        for group in groups:
-            group = group.strip()
-            if group:
-                # Each group can have multiple AND terms
-                group_terms = group.split()
-                # Check for wildcards in group terms
-                for term in group_terms:
-                    if '*' in term:
-                        has_wildcard = True
-                or_groups.append(group_terms)
-    else:
-        # No OR - treat as AND terms
-        terms = remaining.split() if remaining else []
-        for term in terms:
-            if '*' in term:
-                has_wildcard = True
-            and_terms.append(term)
-    
-    return {
-        'phrase': phrase,
-        'and_terms': and_terms,
-        'or_groups': or_groups,
-        'has_wildcard': has_wildcard
-    }
-
-def filter_articles_by_query(articles: List[dict], query: str) -> List[dict]:
-    """
-    Filter articles by search query.
-    Supports:
-    - Quoted phrases: "high temperature"
-    - AND logic: high temperature (both words must appear)
-    - OR logic: high OR low (at least one word must appear)
-    - Wildcards: catal* (matches catalysis, catalyst, etc.)
-    - Plural forms: fuel cell = fuel cells
-    - Combined: "high temperature" OR "low temperature"
-    """
-    if not query or not query.strip() or not articles:
-        return articles
-    
-    parsed = parse_search_query(query)
-    filtered = []
-    
-    for article in articles:
-        title = article.get('title', '')
-        if not title:
-            continue
-        
-        match = True
-        
-        # Check phrase match
-        if parsed['phrase']:
-            if not check_phrase_match(title, parsed['phrase']):
-                match = False
-        
-        # Check OR groups (if present)
-        if match and parsed['or_groups']:
-            or_match = False
-            for group_terms in parsed['or_groups']:
-                # For each OR group, check if ALL terms in the group match (AND within OR group)
-                group_match = True
-                for term in group_terms:
-                    if not check_term_match(title, term):
-                        group_match = False
-                        break
-                if group_match:
-                    or_match = True
-                    break
-            
-            if not or_match:
-                match = False
-        
-        # Check AND terms (if no OR groups)
-        if match and parsed['and_terms']:
-            for term in parsed['and_terms']:
-                if not check_term_match(title, term):
-                    match = False
-                    break
-        
-        if match:
-            filtered.append(article)
-    
-    return filtered
-
-def parse_complex_search_query(query: str) -> Dict[str, Any]:
-    """
-    Enhanced parser that can handle mixed AND/OR logic.
-    Example: "catal*" AND ("high temperature" OR "low temperature")
-    """
-    # This is a more advanced parser if you need nested logic
-    pass
-
-# ============================================================================
-# PDF REPORT GENERATION FUNCTIONS
+# PDF REPORT GENERATION FUNCTIONS FOR RETRACTION REPORTS
 # ============================================================================
 
 def register_russian_font():
@@ -1816,819 +2183,17 @@ def add_logo_to_pdf(story, logo_path, max_width=150, max_height=150, add_spacer=
         logger.warning(f"Could not load logo: {e}")
         return False
 
-def generate_pdf_by_publisher_journal(journal_name: str, journal_abbr: str, years: List[int],
-                                      hierarchy: Dict, logo_path: str = None,
-                                      report_title: str = "Report by Publisher & Journal",
-                                      sort_option: str = 'alphabetical') -> bytes:
-    """Generate PDF report grouping articles by Publisher -> Journal."""
-    russian_font_name = register_russian_font()
-    
-    # Get filter info from session_state
-    search_query = st.session_state.get('search_query', '')
-    has_filter = 'filtered_articles' in st.session_state and st.session_state.filtered_articles
-    
-    buffer = io.BytesIO()
-    
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        topMargin=1.5*cm,
-        bottomMargin=1.5*cm,
-        leftMargin=2*cm,
-        rightMargin=2*cm
-    )
-    
-    styles = getSampleStyleSheet()
-    
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Normal'],
-        fontSize=22,
-        textColor=colors.HexColor('#2C3E50'),
-        spaceAfter=12,
-        alignment=TA_CENTER,
-        fontName=russian_font_name
-    )
-    
-    subtitle_style = ParagraphStyle(
-        'CustomSubtitle',
-        parent=styles['Normal'],
-        fontSize=14,
-        textColor=colors.HexColor('#34495E'),
-        spaceAfter=8,
-        alignment=TA_CENTER,
-        fontName=russian_font_name
-    )
-    
-    publisher_style = ParagraphStyle(
-        'PublisherStyle',
-        parent=styles['Normal'],
-        fontSize=18,
-        textColor=colors.HexColor('#667eea'),
-        spaceAfter=10,
-        spaceBefore=20,
-        fontName=russian_font_name
-    )
-    
-    journal_style = ParagraphStyle(
-        'JournalStyle',
-        parent=styles['Normal'],
-        fontSize=15,
-        textColor=colors.HexColor('#764ba2'),
-        spaceAfter=8,
-        spaceBefore=12,
-        leftIndent=20,
-        fontName=russian_font_name
-    )
-    
-    article_title_style = ParagraphStyle(
-        'ArticleTitle',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.HexColor('#2C3E50'),
-        spaceAfter=5,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    authors_style = ParagraphStyle(
-        'AuthorsStyle',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#2C3E50'),
-        spaceAfter=3,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    meta_style_default = ParagraphStyle(
-        'MetaDefault',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#27ae60'),
-        spaceAfter=2,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    meta_style_preprint = ParagraphStyle(
-        'MetaPreprint',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#9b59b6'),
-        spaceAfter=2,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    meta_style_book = ParagraphStyle(
-        'MetaBook',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#e67e22'),
-        spaceAfter=2,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    meta_style_conference = ParagraphStyle(
-        'MetaConference',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#2980b9'),
-        spaceAfter=2,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    meta_style_other = ParagraphStyle(
-        'MetaOther',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#7f8c8d'),
-        spaceAfter=2,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    citation_style = ParagraphStyle(
-        'CitationStyle',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#27AE60'),
-        spaceAfter=2,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    toc_publisher_style = ParagraphStyle(
-        'TOCPublisherStyle',
-        parent=styles['Normal'],
-        fontSize=12,
-        textColor=colors.HexColor('#667eea'),
-        spaceAfter=6,
-        fontName=russian_font_name
-    )
-    
-    toc_journal_style = ParagraphStyle(
-        'TOCJournalStyle',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.HexColor('#764ba2'),
-        spaceAfter=4,
-        leftIndent=15,
-        fontName=russian_font_name
-    )
-    
-    intro_style = ParagraphStyle(
-        'IntroStyle',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.HexColor('#2C3E50'),
-        spaceAfter=20,
-        alignment=TA_JUSTIFY,
-        fontName=russian_font_name
-    )
-    
-    footer_style = ParagraphStyle(
-        'FooterStyle',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#95A5A6'),
-        spaceBefore=15,
-        alignment=TA_CENTER,
-        fontName=russian_font_name
-    )
-    
-    separator_style = ParagraphStyle(
-        'Separator',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#BDC3C7'),
-        alignment=TA_CENTER,
-        fontName=russian_font_name
-    )
-    
-    conclusion_style = ParagraphStyle(
-        'ConclusionStyle',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.HexColor('#2C3E50'),
-        spaceAfter=20,
-        alignment=TA_JUSTIFY,
-        fontName=russian_font_name
-    )
-    
-    story = []
-    
-    total_articles = sum(len(articles) for publisher in hierarchy.values() 
-                        for journal in publisher.values() 
-                        for articles in [journal])
-    total_publishers = len(hierarchy)
-    
-    story.append(Spacer(1, 2*cm))
-    
-    # Add logo at beginning with preserved aspect ratio
-    add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
-    
-    story.append(Paragraph("Analytical Report", title_style))
-    story.append(Paragraph(f"«{clean_text(journal_name)}»", subtitle_style))
-    story.append(Spacer(1, 1*cm))
-    
-    years_str = format_year_filter_for_filename(years)
-    story.append(Paragraph(f"Publication period: {years_str}", subtitle_style))
-    story.append(Spacer(1, 1.5*cm))
-    
-    # Format intro text with filter info
-    if search_query and has_filter:
-        intro_text = f"""
-        This report contains {total_articles} articles from «{clean_text(journal_name)}»,
-        grouped by Publisher and Journal.
-        
-        <b>Applied filter:</b> «{clean_text(search_query)}»
-        <b>Sorting:</b> {sort_option.replace('_', ' ').title()}
-        """
-    else:
-        intro_text = f"""
-        This report contains {total_articles} articles from «{clean_text(journal_name)}»,
-        grouped by Publisher and Journal.
-        
-        <b>Sorting:</b> {sort_option.replace('_', ' ').title()}
-        """
-    
-    story.append(Paragraph(intro_text, intro_style))
-    story.append(Spacer(1, 1*cm))
-    
-    stats_data = [
-        ["Metric", "Value"],
-        ["Total Articles", str(total_articles)],
-        ["Publishers", str(total_publishers)],
-        ["Report Type", report_title],
-        ["Sorting", sort_option.replace('_', ' ').title()]
-    ]
-    
-    stats_table = Table(stats_data, colWidths=[doc.width/2.5, doc.width/3])
-    stats_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), russian_font_name),
-        ('FONTSIZE', (0, 0), (-1, 0), 11),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#D5DBDB')),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F2F4F4')]),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ]))
-    
-    story.append(stats_table)
-    story.append(PageBreak())
-    
-    story.append(Paragraph("Table of Contents", title_style))
-    story.append(Spacer(1, 0.5*cm))
-    
-    for publisher, journals in hierarchy.items():
-        publisher_articles = sum(len(articles) for articles in journals.values())
-        anchor_id = f"publisher_{hashlib.md5(publisher.encode('utf-8')).hexdigest()[:8]}"
-        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(publisher)}</b> — {publisher_articles} articles</a>', toc_publisher_style))
-        
-        for journal, articles in journals.items():
-            journal_articles = len(articles)
-            journal_anchor_id = f"journal_{hashlib.md5(f"{publisher}_{journal}".encode('utf-8')).hexdigest()[:8]}"
-            story.append(Paragraph(f'&nbsp;&nbsp;&nbsp;&nbsp;<a href="#{journal_anchor_id}">{clean_text(journal)}</a> — {journal_articles} articles', toc_journal_style))
-        
-        story.append(Spacer(1, 0.3*cm))
-    
-    story.append(PageBreak())
-    
-    for publisher, journals in hierarchy.items():
-        publisher_articles = sum(len(articles) for articles in journals.values())
-        anchor_id = f"publisher_{hashlib.md5(publisher.encode('utf-8')).hexdigest()[:8]}"
-        anchor_para = Paragraph(f'<a name="{anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
-        story.append(anchor_para)
-        
-        story.append(Paragraph(f"{clean_text(publisher)} — {publisher_articles} articles", publisher_style))
-        story.append(Spacer(1, 0.3*cm))
-        
-        for journal, articles in journals.items():
-            journal_anchor_id = f"journal_{hashlib.md5(f"{publisher}_{journal}".encode('utf-8')).hexdigest()[:8]}"
-            journal_anchor_para = Paragraph(f'<a name="{journal_anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
-            story.append(journal_anchor_para)
-            
-            story.append(Paragraph(f"&nbsp;&nbsp;{clean_text(journal)} — {len(articles)} articles", journal_style))
-            story.append(Spacer(1, 0.2*cm))
-            
-            for idx, article in enumerate(articles, 1):
-                title = clean_text(article.get('title', 'No title'))
-                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{idx}. {title}", article_title_style))
-                
-                authors = clean_text(article.get('authors', 'Authors not specified'))
-                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
-                
-                # Single output of affiliations with proper separator
-                affs = clean_text(article.get('affiliations_str', ''))
-                if affs and affs != 'No affiliations specified':
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Affiliations:</b> {affs}", meta_style_default))
-                
-                # Publication type badge
-                type_label = article.get('type_label', 'Other')
-                type_icon = article.get('type_icon', '📎')
-                type_color = article.get('type_color', '#7f8c8d')
-                
-                # Select appropriate style based on type
-                if type_label == 'Preprint':
-                    meta_style = meta_style_preprint
-                elif type_label == 'Book/Chapter':
-                    meta_style = meta_style_book
-                elif type_label == 'Conference':
-                    meta_style = meta_style_conference
-                elif type_label == 'Article':
-                    meta_style = meta_style_default
-                else:
-                    meta_style = meta_style_other
-                
-                story.append(Paragraph(
-                    f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='{type_color}'><b>{type_icon} {type_label}</b></font>",
-                    meta_style
-                ))
-                
-                # Journal name
-                journal_name_article = clean_text(article.get('journal_name', ''))
-                if journal_name_article:
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Journal:</b> {journal_name_article}", meta_style_default))
-                
-                year = article.get('publication_year', '')
-                pub_date = article.get('publication_date', '')
-                volume = article.get('volume', '')
-                issue = article.get('issue', '')
-                pages = article.get('pages', '')
-                
-                meta_parts = []
-                if year:
-                    meta_parts.append(str(year))
-                if pub_date and pub_date != '0000-00-00':
-                    meta_parts.append(f"({pub_date})")
-                if volume:
-                    meta_parts.append(f"Vol. {volume}")
-                if issue:
-                    meta_parts.append(f"Iss. {issue}")
-                if pages:
-                    meta_parts.append(f"pp. {pages}")
-                
-                if meta_parts:
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(meta_parts)}", meta_style_default))
-                
-                citations = article.get('cited_by_count', 0)
-                citations_per_year = article.get('citations_per_year', 0)
-                references = article.get('referenced_works_count', 0)
-                oa_status = article.get('oa_status', 'Closed Access')
-                
-                citation_text = f"<b>Citations:</b> {citations} | <b>per year:</b> {citations_per_year:.1f} | <b>References:</b> {references} | <b>OA:</b> {oa_status}"
-                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{citation_text}", citation_style))
-                
-                doi_url = article.get('doi_url', '')
-                if doi_url:
-                    doi_url_clean = clean_doi_url(doi_url)
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>DOI:</b> <a href='{doi_url_clean}'>{doi_url_clean}</a>", meta_style_default))
-                
-                story.append(Spacer(1, 0.15*cm))
-                
-                if idx < len(articles):
-                    story.append(Paragraph("&nbsp;&nbsp;&nbsp;&nbsp;" + "─" * 40, separator_style))
-                    story.append(Spacer(1, 0.1*cm))
-            
-            story.append(Spacer(1, 0.3*cm))
-        
-        story.append(Spacer(1, 0.3*cm))
-        story.append(PageBreak())
-    
-    story.append(Paragraph("Conclusion", title_style))
-    story.append(Spacer(1, 0.5*cm))
-    
-    conclusion_text = f"""
-    This report contains {total_articles} articles from «{clean_text(journal_name)}»,
-    grouped by {total_publishers} publishers and their respective journals.
-    
-    The articles are organized alphabetically by publisher and journal name.
-    Within each journal, articles are sorted by citations per year (descending).
+def generate_retraction_pdf_by_country_affiliation(
+    hierarchy: Dict,
+    years: List[int],
+    selected_countries: List[str],
+    logo_path: str = None,
+    report_title: str = "Report by Country & Affiliation"
+) -> bytes:
     """
-    
-    story.append(Paragraph(conclusion_text, conclusion_style))
-    story.append(Spacer(1, 1*cm))
-    
-    # Add logo at end with preserved aspect ratio (smaller)
-    add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
-    
-    story.append(Paragraph(f"© Chimica Techno Acta | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
-    story.append(Paragraph("Report generated using CTA Article Recommender Pro*2", footer_style))
-    
-    doc.build(story)
-    return buffer.getvalue()
-
-def generate_pdf_by_citations(journal_name: str, journal_abbr: str, years: List[int],
-                              articles: List[dict], logo_path: str = None,
-                              report_title: str = "Report by Citations per Year",
-                              sort_option: str = 'citations_per_year') -> bytes:
-    """Generate PDF report with articles sorted by citations per year."""
-    russian_font_name = register_russian_font()
-    
-    # Get filter info from session_state
-    search_query = st.session_state.get('search_query', '')
-    has_filter = 'filtered_articles' in st.session_state and st.session_state.filtered_articles
-    
-    buffer = io.BytesIO()
-    
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        topMargin=1.5*cm,
-        bottomMargin=1.5*cm,
-        leftMargin=2*cm,
-        rightMargin=2*cm
-    )
-    
-    styles = getSampleStyleSheet()
-    
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Normal'],
-        fontSize=22,
-        textColor=colors.HexColor('#2C3E50'),
-        spaceAfter=12,
-        alignment=TA_CENTER,
-        fontName=russian_font_name
-    )
-    
-    subtitle_style = ParagraphStyle(
-        'CustomSubtitle',
-        parent=styles['Normal'],
-        fontSize=14,
-        textColor=colors.HexColor('#34495E'),
-        spaceAfter=8,
-        alignment=TA_CENTER,
-        fontName=russian_font_name
-    )
-    
-    article_title_style = ParagraphStyle(
-        'ArticleTitle',
-        parent=styles['Normal'],
-        fontSize=11,
-        textColor=colors.HexColor('#2C3E50'),
-        spaceAfter=5,
-        leftIndent=0,
-        fontName=russian_font_name
-    )
-    
-    authors_style = ParagraphStyle(
-        'AuthorsStyle',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#2C3E50'),
-        spaceAfter=3,
-        leftIndent=0,
-        fontName=russian_font_name
-    )
-    
-    meta_style_default = ParagraphStyle(
-        'MetaDefault',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#27ae60'),
-        spaceAfter=2,
-        leftIndent=0,
-        fontName=russian_font_name
-    )
-    
-    meta_style_preprint = ParagraphStyle(
-        'MetaPreprint',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#9b59b6'),
-        spaceAfter=2,
-        leftIndent=0,
-        fontName=russian_font_name
-    )
-    
-    meta_style_book = ParagraphStyle(
-        'MetaBook',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#e67e22'),
-        spaceAfter=2,
-        leftIndent=0,
-        fontName=russian_font_name
-    )
-    
-    meta_style_conference = ParagraphStyle(
-        'MetaConference',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#2980b9'),
-        spaceAfter=2,
-        leftIndent=0,
-        fontName=russian_font_name
-    )
-    
-    meta_style_other = ParagraphStyle(
-        'MetaOther',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#7f8c8d'),
-        spaceAfter=2,
-        leftIndent=0,
-        fontName=russian_font_name
-    )
-    
-    citation_style = ParagraphStyle(
-        'CitationStyle',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#27AE60'),
-        spaceAfter=2,
-        leftIndent=0,
-        fontName=russian_font_name
-    )
-    
-    intro_style = ParagraphStyle(
-        'IntroStyle',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.HexColor('#2C3E50'),
-        spaceAfter=20,
-        alignment=TA_JUSTIFY,
-        fontName=russian_font_name
-    )
-    
-    footer_style = ParagraphStyle(
-        'FooterStyle',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#95A5A6'),
-        spaceBefore=15,
-        alignment=TA_CENTER,
-        fontName=russian_font_name
-    )
-    
-    separator_style = ParagraphStyle(
-        'Separator',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#BDC3C7'),
-        alignment=TA_CENTER,
-        fontName=russian_font_name
-    )
-    
-    conclusion_style = ParagraphStyle(
-        'ConclusionStyle',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.HexColor('#2C3E50'),
-        spaceAfter=20,
-        alignment=TA_JUSTIFY,
-        fontName=russian_font_name
-    )
-    
-    toc_article_style = ParagraphStyle(
-        'TOCArticleStyle',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#2C3E50'),
-        spaceAfter=3,
-        fontName=russian_font_name
-    )
-    
-    toc_more_style = ParagraphStyle(
-        'TOCMoreStyle',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#7F8C8D'),
-        spaceAfter=3,
-        fontName=russian_font_name
-    )
-    
-    story = []
-    
-    total_articles = len(articles)
-    
-    story.append(Spacer(1, 2*cm))
-    
-    # Add logo at beginning with preserved aspect ratio
-    add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
-    
-    story.append(Paragraph("Analytical Report", title_style))
-    story.append(Paragraph(f"«{clean_text(journal_name)}»", subtitle_style))
-    story.append(Spacer(1, 1*cm))
-    
-    years_str = format_year_filter_for_filename(years)
-    story.append(Paragraph(f"Publication period: {years_str}", subtitle_style))
-    story.append(Spacer(1, 1.5*cm))
-    
-    avg_citations = sum(a.get('citations_per_year', 0) for a in articles) / total_articles if total_articles > 0 else 0
-    
-    # Format intro text with filter info
-    sort_display = sort_option.replace('_', ' ').title()
-    if sort_option == 'publication_date':
-        sort_display = 'Publication Date (Newest First)'
-    
-    if search_query and has_filter:
-        intro_text = f"""
-        This report contains {total_articles} articles from «{clean_text(journal_name)}»,
-        sorted by {sort_display}.
-        
-        Average citations per year: {avg_citations:.1f}
-        
-        <b>Applied filter:</b> «{clean_text(search_query)}»
-        """
-    else:
-        intro_text = f"""
-        This report contains {total_articles} articles from «{clean_text(journal_name)}»,
-        sorted by {sort_display}.
-        
-        Average citations per year: {avg_citations:.1f}
-        """
-    
-    story.append(Paragraph(intro_text, intro_style))
-    story.append(Spacer(1, 1*cm))
-    
-    stats_data = [
-        ["Metric", "Value"],
-        ["Total Articles", str(total_articles)],
-        ["Avg Citations/Year", f"{avg_citations:.1f}"],
-        ["Report Type", report_title],
-        ["Sorting", sort_display]
-    ]
-    
-    stats_table = Table(stats_data, colWidths=[doc.width/2.5, doc.width/3])
-    stats_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), russian_font_name),
-        ('FONTSIZE', (0, 0), (-1, 0), 11),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#D5DBDB')),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F2F4F4')]),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-    ]))
-    
-    story.append(stats_table)
-    story.append(PageBreak())
-    
-    # ===== TABLE OF CONTENTS WITH INTELLIGENT INDEX SELECTION =====
-    story.append(Paragraph("Table of Contents", title_style))
-    story.append(Spacer(1, 0.5*cm))
-    
-    # Calculate which article indices to show in TOC
-    toc_indices = calculate_toc_indices(total_articles)
-    
-    # Display selected articles in TOC
-    for idx in toc_indices:
-        article = articles[idx - 1]  # Convert 1-based index to 0-based
-        title = clean_text(article.get('title', 'No title')[:60])
-        
-        # Format the display text based on sort option
-        if sort_option == 'citations_per_year':
-            citations = article.get('citations_per_year', 0)
-            display_text = f"{idx}. {title}... — {citations:.1f} citations/year"
-        elif sort_option == 'total_citations':
-            citations = article.get('cited_by_count', 0)
-            display_text = f"{idx}. {title}... — {citations} total citations"
-        else:  # publication_date
-            pub_date = article.get('publication_date', '')
-            display_text = f"{idx}. {title}... — {pub_date}"
-        
-        # Create anchor for this article
-        anchor_id = f"article_{hashlib.md5(str(idx).encode('utf-8')).hexdigest()[:8]}"
-        story.append(Paragraph(f'<a href="#{anchor_id}">{display_text}</a>', toc_article_style))
-    
-    # Show message about omitted articles if any
-    if len(toc_indices) < total_articles:
-        omitted_count = total_articles - len(toc_indices)
-        story.append(Paragraph(f"... and {omitted_count} more articles not shown in TOC", toc_more_style))
-    
-    story.append(PageBreak())
-    
-    # ===== MAIN CONTENT =====
-    sort_display_title = sort_display
-    story.append(Paragraph(f"Articles by {sort_display_title}", title_style))
-    story.append(Spacer(1, 0.5*cm))
-    
-    for idx, article in enumerate(articles, 1):
-        anchor_id = f"article_{hashlib.md5(str(idx).encode('utf-8')).hexdigest()[:8]}"
-        anchor_para = Paragraph(f'<a name="{anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
-        story.append(anchor_para)
-        
-        title = clean_text(article.get('title', 'No title'))
-        story.append(Paragraph(f"{idx}. {title}", article_title_style))
-        
-        authors = clean_text(article.get('authors', 'Authors not specified'))
-        story.append(Paragraph(f"<b>Authors:</b> {authors}", authors_style))
-        
-        # Single output of affiliations with proper separator
-        affs = clean_text(article.get('affiliations_str', ''))
-        if affs and affs != 'No affiliations specified':
-            story.append(Paragraph(f"<b>Affiliations:</b> {affs}", meta_style_default))
-        
-        # Publication type badge
-        type_label = article.get('type_label', 'Other')
-        type_icon = article.get('type_icon', '📎')
-        type_color = article.get('type_color', '#7f8c8d')
-        
-        # Select appropriate style based on type
-        if type_label == 'Preprint':
-            meta_style = meta_style_preprint
-        elif type_label == 'Book/Chapter':
-            meta_style = meta_style_book
-        elif type_label == 'Conference':
-            meta_style = meta_style_conference
-        elif type_label == 'Article':
-            meta_style = meta_style_default
-        else:
-            meta_style = meta_style_other
-        
-        story.append(Paragraph(
-            f"<font color='{type_color}'><b>{type_icon} {type_label}</b></font>",
-            meta_style
-        ))
-        
-        # Journal name
-        journal_name_article = clean_text(article.get('journal_name', ''))
-        if journal_name_article:
-            story.append(Paragraph(f"<b>Journal:</b> {journal_name_article}", meta_style_default))
-        
-        year = article.get('publication_year', '')
-        pub_date = article.get('publication_date', '')
-        volume = article.get('volume', '')
-        issue = article.get('issue', '')
-        pages = article.get('pages', '')
-        
-        meta_parts = []
-        if year:
-            meta_parts.append(str(year))
-        if pub_date and pub_date != '0000-00-00':
-            meta_parts.append(f"({pub_date})")
-        if volume:
-            meta_parts.append(f"Vol. {volume}")
-        if issue:
-            meta_parts.append(f"Iss. {issue}")
-        if pages:
-            meta_parts.append(f"pp. {pages}")
-        
-        if meta_parts:
-            story.append(Paragraph(f"{', '.join(meta_parts)}", meta_style_default))
-        
-        citations = article.get('cited_by_count', 0)
-        citations_per_year = article.get('citations_per_year', 0)
-        references = article.get('referenced_works_count', 0)
-        oa_status = article.get('oa_status', 'Closed Access')
-        
-        citation_text = f"<b>Citations:</b> {citations} | <b>per year:</b> {citations_per_year:.1f} | <b>References:</b> {references} | <b>OA:</b> {oa_status}"
-        story.append(Paragraph(citation_text, citation_style))
-        
-        doi_url = article.get('doi_url', '')
-        if doi_url:
-            doi_url_clean = clean_doi_url(doi_url)
-            story.append(Paragraph(f"<b>DOI:</b> <a href='{doi_url_clean}'>{doi_url_clean}</a>", meta_style_default))
-        
-        story.append(Spacer(1, 0.15*cm))
-        
-        if idx < len(articles):
-            story.append(Paragraph("─" * 60, separator_style))
-            story.append(Spacer(1, 0.1*cm))
-    
-    story.append(Spacer(1, 0.3*cm))
-    story.append(PageBreak())
-    
-    story.append(Paragraph("Conclusion", title_style))
-    story.append(Spacer(1, 0.5*cm))
-    
-    conclusion_text = f"""
-    This report contains {total_articles} articles from «{clean_text(journal_name)}»,
-    sorted by {sort_display} in descending order.
-    
-    The articles with the highest {sort_display.lower()} are listed first,
-    representing the most impactful recent publications.
+    Generate PDF report grouping retracted articles by Country -> Affiliation.
     """
-    
-    story.append(Paragraph(conclusion_text, conclusion_style))
-    story.append(Spacer(1, 1*cm))
-    
-    # Add logo at end with preserved aspect ratio (smaller)
-    add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
-    
-    story.append(Paragraph(f"© Chimica Techno Acta | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
-    story.append(Paragraph("Report generated using CTA Article Recommender Pro*2", footer_style))
-    
-    doc.build(story)
-    return buffer.getvalue()
-
-def generate_pdf_by_country_affiliation(journal_name: str, journal_abbr: str, years: List[int],
-                                       hierarchy: Dict, logo_path: str = None,
-                                       report_title: str = "Report by Country & Affiliation",
-                                       sort_option: str = 'alphabetical') -> bytes:
-    """Generate PDF report grouping articles by Country -> Affiliation."""
     russian_font_name = register_russian_font()
-    
-    # Get filter info from session_state
-    search_query = st.session_state.get('search_query', '')
-    has_filter = 'filtered_articles' in st.session_state and st.session_state.filtered_articles
     
     buffer = io.BytesIO()
     
@@ -2704,8 +2269,8 @@ def generate_pdf_by_country_affiliation(journal_name: str, journal_abbr: str, ye
         fontName=russian_font_name
     )
     
-    meta_style_default = ParagraphStyle(
-        'MetaDefault',
+    meta_style = ParagraphStyle(
+        'MetaStyle',
         parent=styles['Normal'],
         fontSize=8,
         textColor=colors.HexColor('#27ae60'),
@@ -2714,51 +2279,21 @@ def generate_pdf_by_country_affiliation(journal_name: str, journal_abbr: str, ye
         fontName=russian_font_name
     )
     
-    meta_style_preprint = ParagraphStyle(
-        'MetaPreprint',
+    notice_style = ParagraphStyle(
+        'NoticeStyle',
         parent=styles['Normal'],
         fontSize=8,
-        textColor=colors.HexColor('#9b59b6'),
+        textColor=colors.HexColor('#e74c3c'),
         spaceAfter=2,
         leftIndent=40,
         fontName=russian_font_name
     )
     
-    meta_style_book = ParagraphStyle(
-        'MetaBook',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#e67e22'),
-        spaceAfter=2,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    meta_style_conference = ParagraphStyle(
-        'MetaConference',
+    doi_style = ParagraphStyle(
+        'DoiStyle',
         parent=styles['Normal'],
         fontSize=8,
         textColor=colors.HexColor('#2980b9'),
-        spaceAfter=2,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    meta_style_other = ParagraphStyle(
-        'MetaOther',
-        parent=styles['Normal'],
-        fontSize=8,
-        textColor=colors.HexColor('#7f8c8d'),
-        spaceAfter=2,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    citation_style = ParagraphStyle(
-        'CitationStyle',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#27AE60'),
         spaceAfter=2,
         leftIndent=40,
         fontName=russian_font_name
@@ -2831,43 +2366,36 @@ def generate_pdf_by_country_affiliation(journal_name: str, journal_abbr: str, ye
     
     story.append(Spacer(1, 2*cm))
     
-    # Add logo at beginning with preserved aspect ratio
+    # Add logo at beginning
     add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
     
-    story.append(Paragraph("Analytical Report", title_style))
-    story.append(Paragraph(f"«{clean_text(journal_name)}»", subtitle_style))
+    story.append(Paragraph("Retraction Analysis Report", title_style))
+    story.append(Paragraph("Retracted Articles Grouped by Country & Affiliation", subtitle_style))
     story.append(Spacer(1, 1*cm))
     
     years_str = format_year_filter_for_filename(years)
     story.append(Paragraph(f"Publication period: {years_str}", subtitle_style))
+    
+    if selected_countries:
+        country_names = [get_country_name(c) for c in selected_countries]
+        story.append(Paragraph(f"Selected countries: {', '.join(country_names)}", subtitle_style))
+    
     story.append(Spacer(1, 1.5*cm))
     
-    # Format intro text with filter info
-    if search_query and has_filter:
-        intro_text = f"""
-        This report contains {total_articles} articles from «{clean_text(journal_name)}»,
-        grouped by Country and Affiliation.
-        
-        <b>Applied filter:</b> «{clean_text(search_query)}»
-        <b>Sorting:</b> {sort_option.replace('_', ' ').title()}
-        """
-    else:
-        intro_text = f"""
-        This report contains {total_articles} articles from «{clean_text(journal_name)}»,
-        grouped by Country and Affiliation.
-        
-        <b>Sorting:</b> {sort_option.replace('_', ' ').title()}
-        """
+    intro_text = f"""
+    This report contains {total_articles} retracted articles grouped by Country and Affiliation.
+    Articles are sorted by the number of retractions in each group (descending order).
+    """
     
     story.append(Paragraph(intro_text, intro_style))
     story.append(Spacer(1, 1*cm))
     
     stats_data = [
         ["Metric", "Value"],
-        ["Total Articles", str(total_articles)],
+        ["Total Retracted Articles", str(total_articles)],
         ["Countries", str(total_countries)],
         ["Report Type", report_title],
-        ["Sorting", sort_option.replace('_', ' ').title()]
+        ["Sorting", "By Retraction Count (Descending)"]
     ]
     
     stats_table = Table(stats_data, colWidths=[doc.width/2.5, doc.width/3])
@@ -2885,6 +2413,7 @@ def generate_pdf_by_country_affiliation(journal_name: str, journal_abbr: str, ye
     story.append(stats_table)
     story.append(PageBreak())
     
+    # Table of Contents
     story.append(Paragraph("Table of Contents", title_style))
     story.append(Spacer(1, 0.5*cm))
     
@@ -2902,6 +2431,7 @@ def generate_pdf_by_country_affiliation(journal_name: str, journal_abbr: str, ye
     
     story.append(PageBreak())
     
+    # Main content
     for country, affiliations in hierarchy.items():
         country_articles = sum(len(articles) for articles in affiliations.values())
         anchor_id = f"country_{hashlib.md5(country.encode('utf-8')).hexdigest()[:8]}"
@@ -2926,49 +2456,29 @@ def generate_pdf_by_country_affiliation(journal_name: str, journal_abbr: str, ye
                 authors = clean_text(article.get('authors', 'Authors not specified'))
                 story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
                 
-                # Single output of affiliations with proper separator
+                # Affiliations
                 affs = clean_text(article.get('affiliations_str', ''))
                 if affs and affs != 'No affiliations specified':
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Affiliations:</b> {affs}", meta_style_default))
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Affiliations:</b> {affs}", meta_style))
                 
-                # Publication type badge
-                type_label = article.get('type_label', 'Other')
-                type_icon = article.get('type_icon', '📎')
-                type_color = article.get('type_color', '#7f8c8d')
-                
-                # Select appropriate style based on type
-                if type_label == 'Preprint':
-                    meta_style = meta_style_preprint
-                elif type_label == 'Book/Chapter':
-                    meta_style = meta_style_book
-                elif type_label == 'Conference':
-                    meta_style = meta_style_conference
-                elif type_label == 'Article':
-                    meta_style = meta_style_default
-                else:
-                    meta_style = meta_style_other
-                
-                story.append(Paragraph(
-                    f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='{type_color}'><b>{type_icon} {type_label}</b></font>",
-                    meta_style
-                ))
-                
-                # Journal name
-                journal_name_article = clean_text(article.get('journal_name', ''))
-                if journal_name_article:
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Journal:</b> {journal_name_article}", meta_style_default))
-                
+                # Retracted article info
                 year = article.get('publication_year', '')
                 pub_date = article.get('publication_date', '')
                 volume = article.get('volume', '')
                 issue = article.get('issue', '')
                 pages = article.get('pages', '')
+                journal = article.get('journal_name', '')
+                publisher = article.get('publisher', '')
                 
                 meta_parts = []
+                if publisher:
+                    meta_parts.append(f"Publisher: {publisher}")
+                if journal:
+                    meta_parts.append(f"Journal: {journal}")
                 if year:
-                    meta_parts.append(str(year))
+                    meta_parts.append(f"Year: {year}")
                 if pub_date and pub_date != '0000-00-00':
-                    meta_parts.append(f"({pub_date})")
+                    meta_parts.append(f"Published: {pub_date}")
                 if volume:
                     meta_parts.append(f"Vol. {volume}")
                 if issue:
@@ -2977,20 +2487,47 @@ def generate_pdf_by_country_affiliation(journal_name: str, journal_abbr: str, ye
                     meta_parts.append(f"pp. {pages}")
                 
                 if meta_parts:
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(meta_parts)}", meta_style_default))
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(meta_parts)}", meta_style))
                 
-                citations = article.get('cited_by_count', 0)
-                citations_per_year = article.get('citations_per_year', 0)
-                references = article.get('referenced_works_count', 0)
-                oa_status = article.get('oa_status', 'Closed Access')
+                # Retracted article DOI
+                doi_retracted = article.get('doi_retracted', '')
+                if doi_retracted:
+                    doi_url = clean_doi_url(f"https://doi.org/{doi_retracted}")
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Retracted Article DOI:</b> <a href='{doi_url}'>{doi_retracted}</a>", doi_style))
                 
-                citation_text = f"<b>Citations:</b> {citations} | <b>per year:</b> {citations_per_year:.1f} | <b>References:</b> {references} | <b>OA:</b> {oa_status}"
-                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{citation_text}", citation_style))
+                # Notice info
+                notice_year = article.get('notice_publication_year', '')
+                notice_date = article.get('notice_publication_date', '')
+                notice_journal = article.get('notice_journal', '')
+                notice_publisher = article.get('notice_publisher', '')
+                notice_volume = article.get('notice_volume', '')
+                notice_issue = article.get('notice_issue', '')
+                notice_pages = article.get('notice_pages', '')
+                doi_notice = article.get('doi_notice', '')
                 
-                doi_url = article.get('doi_url', '')
-                if doi_url:
-                    doi_url_clean = clean_doi_url(doi_url)
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>DOI:</b> <a href='{doi_url_clean}'>{doi_url_clean}</a>", meta_style_default))
+                if notice_year or notice_journal or doi_notice:
+                    notice_parts = []
+                    notice_parts.append("<b>🔴 Retraction Notice:</b>")
+                    if notice_publisher:
+                        notice_parts.append(f"Publisher: {notice_publisher}")
+                    if notice_journal:
+                        notice_parts.append(f"Journal: {notice_journal}")
+                    if notice_year:
+                        notice_parts.append(f"Year: {notice_year}")
+                    if notice_date and notice_date != '0000-00-00':
+                        notice_parts.append(f"Published: {notice_date}")
+                    if notice_volume:
+                        notice_parts.append(f"Vol. {notice_volume}")
+                    if notice_issue:
+                        notice_parts.append(f"Iss. {notice_issue}")
+                    if notice_pages:
+                        notice_parts.append(f"pp. {notice_pages}")
+                    
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{' | '.join(notice_parts)}", notice_style))
+                    
+                    if doi_notice:
+                        notice_doi_url = clean_doi_url(f"https://doi.org/{doi_notice}")
+                        story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Retraction Notice DOI:</b> <a href='{notice_doi_url}'>{doi_notice}</a>", doi_style))
                 
                 story.append(Spacer(1, 0.15*cm))
                 
@@ -3007,21 +2544,723 @@ def generate_pdf_by_country_affiliation(journal_name: str, journal_abbr: str, ye
     story.append(Spacer(1, 0.5*cm))
     
     conclusion_text = f"""
-    This report contains {total_articles} articles from «{clean_text(journal_name)}»,
-    grouped by {total_countries} countries and their respective affiliations.
-    
-    The articles are organized alphabetically by country and affiliation name.
-    Within each affiliation, articles are sorted by citations per year (descending).
+    This report contains {total_articles} retracted articles grouped by {total_countries} countries and their respective affiliations.
+    The articles are sorted by the number of retractions in each group (descending order).
+    Within each affiliation, articles are sorted by publication year (newest first).
     """
     
     story.append(Paragraph(conclusion_text, conclusion_style))
     story.append(Spacer(1, 1*cm))
     
-    # Add logo at end with preserved aspect ratio (smaller)
     add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
     
-    story.append(Paragraph(f"© Chimica Techno Acta | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
-    story.append(Paragraph("Report generated using CTA Article Recommender Pro*2", footer_style))
+    story.append(Paragraph(f"© Retraction Detector Pro*2 | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
+    story.append(Paragraph("Report generated using Retraction Article Detector Pro*2", footer_style))
+    
+    doc.build(story)
+    return buffer.getvalue()
+
+def generate_retraction_pdf_by_author(
+    author_groups: Dict[str, List[dict]],
+    years: List[int],
+    selected_countries: List[str],
+    logo_path: str = None,
+    report_title: str = "Report by Author"
+) -> bytes:
+    """
+    Generate PDF report grouping retracted articles by author.
+    """
+    russian_font_name = register_russian_font()
+    
+    buffer = io.BytesIO()
+    
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        topMargin=1.5*cm,
+        bottomMargin=1.5*cm,
+        leftMargin=2*cm,
+        rightMargin=2*cm
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Normal'],
+        fontSize=22,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=12,
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Normal'],
+        fontSize=14,
+        textColor=colors.HexColor('#34495E'),
+        spaceAfter=8,
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    author_style = ParagraphStyle(
+        'AuthorStyle',
+        parent=styles['Normal'],
+        fontSize=16,
+        textColor=colors.HexColor('#667eea'),
+        spaceAfter=10,
+        spaceBefore=20,
+        fontName=russian_font_name
+    )
+    
+    article_title_style = ParagraphStyle(
+        'ArticleTitle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=5,
+        leftIndent=30,
+        fontName=russian_font_name
+    )
+    
+    authors_style = ParagraphStyle(
+        'AuthorsStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=3,
+        leftIndent=30,
+        fontName=russian_font_name
+    )
+    
+    meta_style = ParagraphStyle(
+        'MetaStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#27ae60'),
+        spaceAfter=2,
+        leftIndent=30,
+        fontName=russian_font_name
+    )
+    
+    notice_style = ParagraphStyle(
+        'NoticeStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#e74c3c'),
+        spaceAfter=2,
+        leftIndent=30,
+        fontName=russian_font_name
+    )
+    
+    doi_style = ParagraphStyle(
+        'DoiStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#2980b9'),
+        spaceAfter=2,
+        leftIndent=30,
+        fontName=russian_font_name
+    )
+    
+    toc_author_style = ParagraphStyle(
+        'TOCAuthorStyle',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.HexColor('#667eea'),
+        spaceAfter=6,
+        fontName=russian_font_name
+    )
+    
+    intro_style = ParagraphStyle(
+        'IntroStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=20,
+        alignment=TA_JUSTIFY,
+        fontName=russian_font_name
+    )
+    
+    footer_style = ParagraphStyle(
+        'FooterStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#95A5A6'),
+        spaceBefore=15,
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    separator_style = ParagraphStyle(
+        'Separator',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#BDC3C7'),
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    conclusion_style = ParagraphStyle(
+        'ConclusionStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=20,
+        alignment=TA_JUSTIFY,
+        fontName=russian_font_name
+    )
+    
+    story = []
+    
+    total_articles = sum(len(articles) for articles in author_groups.values())
+    total_authors = len(author_groups)
+    
+    story.append(Spacer(1, 2*cm))
+    
+    add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
+    
+    story.append(Paragraph("Retraction Analysis Report", title_style))
+    story.append(Paragraph("Retracted Articles Grouped by Author", subtitle_style))
+    story.append(Spacer(1, 1*cm))
+    
+    years_str = format_year_filter_for_filename(years)
+    story.append(Paragraph(f"Publication period: {years_str}", subtitle_style))
+    
+    if selected_countries:
+        country_names = [get_country_name(c) for c in selected_countries]
+        story.append(Paragraph(f"Selected countries: {', '.join(country_names)}", subtitle_style))
+    
+    story.append(Spacer(1, 1.5*cm))
+    
+    intro_text = f"""
+    This report contains {total_articles} retracted articles grouped by author (last name + first initial).
+    Authors are sorted by the number of retracted articles (descending order).
+    Each article appears under each author who contributed to it.
+    """
+    
+    story.append(Paragraph(intro_text, intro_style))
+    story.append(Spacer(1, 1*cm))
+    
+    stats_data = [
+        ["Metric", "Value"],
+        ["Total Retracted Articles", str(total_articles)],
+        ["Unique Authors", str(total_authors)],
+        ["Report Type", report_title],
+        ["Sorting", "By Retraction Count (Descending)"]
+    ]
+    
+    stats_table = Table(stats_data, colWidths=[doc.width/2.5, doc.width/3])
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), russian_font_name),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#D5DBDB')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F2F4F4')]),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    story.append(stats_table)
+    story.append(PageBreak())
+    
+    # Table of Contents
+    story.append(Paragraph("Table of Contents", title_style))
+    story.append(Spacer(1, 0.5*cm))
+    
+    for author, articles in author_groups.items():
+        anchor_id = f"author_{hashlib.md5(author.encode('utf-8')).hexdigest()[:8]}"
+        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(author)}</b> — {len(articles)} articles</a>', toc_author_style))
+    
+    story.append(PageBreak())
+    
+    # Main content
+    for author, articles in author_groups.items():
+        anchor_id = f"author_{hashlib.md5(author.encode('utf-8')).hexdigest()[:8]}"
+        anchor_para = Paragraph(f'<a name="{anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
+        story.append(anchor_para)
+        
+        story.append(Paragraph(f"{clean_text(author)} — {len(articles)} articles", author_style))
+        story.append(Spacer(1, 0.2*cm))
+        
+        for idx, article in enumerate(articles, 1):
+            title = clean_text(article.get('title', 'No title'))
+            story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{idx}. {title}", article_title_style))
+            
+            all_authors = clean_text(article.get('authors', 'Authors not specified'))
+            story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>All Authors:</b> {all_authors}", authors_style))
+            
+            # Affiliations
+            affs = clean_text(article.get('affiliations_str', ''))
+            if affs and affs != 'No affiliations specified':
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Affiliations:</b> {affs}", meta_style))
+            
+            # Retracted article info
+            year = article.get('publication_year', '')
+            pub_date = article.get('publication_date', '')
+            volume = article.get('volume', '')
+            issue = article.get('issue', '')
+            pages = article.get('pages', '')
+            journal = article.get('journal_name', '')
+            publisher = article.get('publisher', '')
+            
+            meta_parts = []
+            if publisher:
+                meta_parts.append(f"Publisher: {publisher}")
+            if journal:
+                meta_parts.append(f"Journal: {journal}")
+            if year:
+                meta_parts.append(f"Year: {year}")
+            if pub_date and pub_date != '0000-00-00':
+                meta_parts.append(f"Published: {pub_date}")
+            if volume:
+                meta_parts.append(f"Vol. {volume}")
+            if issue:
+                meta_parts.append(f"Iss. {issue}")
+            if pages:
+                meta_parts.append(f"pp. {pages}")
+            
+            if meta_parts:
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(meta_parts)}", meta_style))
+            
+            # Retracted article DOI
+            doi_retracted = article.get('doi_retracted', '')
+            if doi_retracted:
+                doi_url = clean_doi_url(f"https://doi.org/{doi_retracted}")
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Retracted Article DOI:</b> <a href='{doi_url}'>{doi_retracted}</a>", doi_style))
+            
+            # Notice info
+            notice_year = article.get('notice_publication_year', '')
+            notice_date = article.get('notice_publication_date', '')
+            notice_journal = article.get('notice_journal', '')
+            notice_publisher = article.get('notice_publisher', '')
+            notice_volume = article.get('notice_volume', '')
+            notice_issue = article.get('notice_issue', '')
+            notice_pages = article.get('notice_pages', '')
+            doi_notice = article.get('doi_notice', '')
+            
+            if notice_year or notice_journal or doi_notice:
+                notice_parts = []
+                notice_parts.append("<b>🔴 Retraction Notice:</b>")
+                if notice_publisher:
+                    notice_parts.append(f"Publisher: {notice_publisher}")
+                if notice_journal:
+                    notice_parts.append(f"Journal: {notice_journal}")
+                if notice_year:
+                    notice_parts.append(f"Year: {notice_year}")
+                if notice_date and notice_date != '0000-00-00':
+                    notice_parts.append(f"Published: {notice_date}")
+                if notice_volume:
+                    notice_parts.append(f"Vol. {notice_volume}")
+                if notice_issue:
+                    notice_parts.append(f"Iss. {notice_issue}")
+                if notice_pages:
+                    notice_parts.append(f"pp. {notice_pages}")
+                
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{' | '.join(notice_parts)}", notice_style))
+                
+                if doi_notice:
+                    notice_doi_url = clean_doi_url(f"https://doi.org/{doi_notice}")
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Retraction Notice DOI:</b> <a href='{notice_doi_url}'>{doi_notice}</a>", doi_style))
+            
+            story.append(Spacer(1, 0.15*cm))
+            
+            if idx < len(articles):
+                story.append(Paragraph("&nbsp;&nbsp;&nbsp;&nbsp;" + "─" * 40, separator_style))
+                story.append(Spacer(1, 0.1*cm))
+        
+        story.append(Spacer(1, 0.3*cm))
+        story.append(PageBreak())
+    
+    story.append(Paragraph("Conclusion", title_style))
+    story.append(Spacer(1, 0.5*cm))
+    
+    conclusion_text = f"""
+    This report contains {total_articles} retracted articles grouped by {total_authors} unique authors.
+    The authors are sorted by the number of retracted articles (descending order).
+    Within each author group, articles are sorted by publication year (newest first).
+    """
+    
+    story.append(Paragraph(conclusion_text, conclusion_style))
+    story.append(Spacer(1, 1*cm))
+    
+    add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
+    
+    story.append(Paragraph(f"© Retraction Detector Pro*2 | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
+    story.append(Paragraph("Report generated using Retraction Article Detector Pro*2", footer_style))
+    
+    doc.build(story)
+    return buffer.getvalue()
+
+def generate_retraction_pdf_by_publisher_journal(
+    hierarchy: Dict,
+    years: List[int],
+    selected_countries: List[str],
+    logo_path: str = None,
+    report_title: str = "Report by Publisher & Journal"
+) -> bytes:
+    """
+    Generate PDF report grouping retracted articles by Publisher -> Journal.
+    """
+    russian_font_name = register_russian_font()
+    
+    buffer = io.BytesIO()
+    
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        topMargin=1.5*cm,
+        bottomMargin=1.5*cm,
+        leftMargin=2*cm,
+        rightMargin=2*cm
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Normal'],
+        fontSize=22,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=12,
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Normal'],
+        fontSize=14,
+        textColor=colors.HexColor('#34495E'),
+        spaceAfter=8,
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    publisher_style = ParagraphStyle(
+        'PublisherStyle',
+        parent=styles['Normal'],
+        fontSize=18,
+        textColor=colors.HexColor('#667eea'),
+        spaceAfter=10,
+        spaceBefore=20,
+        fontName=russian_font_name
+    )
+    
+    journal_style = ParagraphStyle(
+        'JournalStyle',
+        parent=styles['Normal'],
+        fontSize=15,
+        textColor=colors.HexColor('#764ba2'),
+        spaceAfter=8,
+        spaceBefore=12,
+        leftIndent=20,
+        fontName=russian_font_name
+    )
+    
+    article_title_style = ParagraphStyle(
+        'ArticleTitle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=5,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
+    authors_style = ParagraphStyle(
+        'AuthorsStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=3,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
+    meta_style = ParagraphStyle(
+        'MetaStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#27ae60'),
+        spaceAfter=2,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
+    notice_style = ParagraphStyle(
+        'NoticeStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#e74c3c'),
+        spaceAfter=2,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
+    doi_style = ParagraphStyle(
+        'DoiStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#2980b9'),
+        spaceAfter=2,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
+    toc_publisher_style = ParagraphStyle(
+        'TOCPublisherStyle',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.HexColor('#667eea'),
+        spaceAfter=6,
+        fontName=russian_font_name
+    )
+    
+    toc_journal_style = ParagraphStyle(
+        'TOCJournalStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#764ba2'),
+        spaceAfter=4,
+        leftIndent=15,
+        fontName=russian_font_name
+    )
+    
+    intro_style = ParagraphStyle(
+        'IntroStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=20,
+        alignment=TA_JUSTIFY,
+        fontName=russian_font_name
+    )
+    
+    footer_style = ParagraphStyle(
+        'FooterStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#95A5A6'),
+        spaceBefore=15,
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    separator_style = ParagraphStyle(
+        'Separator',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#BDC3C7'),
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    conclusion_style = ParagraphStyle(
+        'ConclusionStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=20,
+        alignment=TA_JUSTIFY,
+        fontName=russian_font_name
+    )
+    
+    story = []
+    
+    total_articles = sum(len(articles) for publisher in hierarchy.values() 
+                        for journal in publisher.values() 
+                        for articles in [journal])
+    total_publishers = len(hierarchy)
+    
+    story.append(Spacer(1, 2*cm))
+    
+    add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
+    
+    story.append(Paragraph("Retraction Analysis Report", title_style))
+    story.append(Paragraph("Retracted Articles Grouped by Publisher & Journal", subtitle_style))
+    story.append(Spacer(1, 1*cm))
+    
+    years_str = format_year_filter_for_filename(years)
+    story.append(Paragraph(f"Publication period: {years_str}", subtitle_style))
+    
+    if selected_countries:
+        country_names = [get_country_name(c) for c in selected_countries]
+        story.append(Paragraph(f"Selected countries: {', '.join(country_names)}", subtitle_style))
+    
+    story.append(Spacer(1, 1.5*cm))
+    
+    intro_text = f"""
+    This report contains {total_articles} retracted articles grouped by Publisher and Journal.
+    Publishers and journals are sorted by the number of retracted articles (descending order).
+    """
+    
+    story.append(Paragraph(intro_text, intro_style))
+    story.append(Spacer(1, 1*cm))
+    
+    stats_data = [
+        ["Metric", "Value"],
+        ["Total Retracted Articles", str(total_articles)],
+        ["Publishers", str(total_publishers)],
+        ["Report Type", report_title],
+        ["Sorting", "By Retraction Count (Descending)"]
+    ]
+    
+    stats_table = Table(stats_data, colWidths=[doc.width/2.5, doc.width/3])
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), russian_font_name),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#D5DBDB')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F2F4F4')]),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    story.append(stats_table)
+    story.append(PageBreak())
+    
+    # Table of Contents
+    story.append(Paragraph("Table of Contents", title_style))
+    story.append(Spacer(1, 0.5*cm))
+    
+    for publisher, journals in hierarchy.items():
+        publisher_articles = sum(len(articles) for articles in journals.values())
+        anchor_id = f"publisher_{hashlib.md5(publisher.encode('utf-8')).hexdigest()[:8]}"
+        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(publisher)}</b> — {publisher_articles} articles</a>', toc_publisher_style))
+        
+        for journal, articles in journals.items():
+            journal_articles = len(articles)
+            journal_anchor_id = f"journal_{hashlib.md5(f"{publisher}_{journal}".encode('utf-8')).hexdigest()[:8]}"
+            story.append(Paragraph(f'&nbsp;&nbsp;&nbsp;&nbsp;<a href="#{journal_anchor_id}">{clean_text(journal)}</a> — {journal_articles} articles', toc_journal_style))
+        
+        story.append(Spacer(1, 0.3*cm))
+    
+    story.append(PageBreak())
+    
+    # Main content
+    for publisher, journals in hierarchy.items():
+        publisher_articles = sum(len(articles) for articles in journals.values())
+        anchor_id = f"publisher_{hashlib.md5(publisher.encode('utf-8')).hexdigest()[:8]}"
+        anchor_para = Paragraph(f'<a name="{anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
+        story.append(anchor_para)
+        
+        story.append(Paragraph(f"{clean_text(publisher)} — {publisher_articles} articles", publisher_style))
+        story.append(Spacer(1, 0.3*cm))
+        
+        for journal, articles in journals.items():
+            journal_anchor_id = f"journal_{hashlib.md5(f"{publisher}_{journal}".encode('utf-8')).hexdigest()[:8]}"
+            journal_anchor_para = Paragraph(f'<a name="{journal_anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
+            story.append(journal_anchor_para)
+            
+            story.append(Paragraph(f"&nbsp;&nbsp;{clean_text(journal)} — {len(articles)} articles", journal_style))
+            story.append(Spacer(1, 0.2*cm))
+            
+            for idx, article in enumerate(articles, 1):
+                title = clean_text(article.get('title', 'No title'))
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{idx}. {title}", article_title_style))
+                
+                authors = clean_text(article.get('authors', 'Authors not specified'))
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
+                
+                # Affiliations
+                affs = clean_text(article.get('affiliations_str', ''))
+                if affs and affs != 'No affiliations specified':
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Affiliations:</b> {affs}", meta_style))
+                
+                # Retracted article info
+                year = article.get('publication_year', '')
+                pub_date = article.get('publication_date', '')
+                volume = article.get('volume', '')
+                issue = article.get('issue', '')
+                pages = article.get('pages', '')
+                
+                meta_parts = []
+                if year:
+                    meta_parts.append(f"Year: {year}")
+                if pub_date and pub_date != '0000-00-00':
+                    meta_parts.append(f"Published: {pub_date}")
+                if volume:
+                    meta_parts.append(f"Vol. {volume}")
+                if issue:
+                    meta_parts.append(f"Iss. {issue}")
+                if pages:
+                    meta_parts.append(f"pp. {pages}")
+                
+                if meta_parts:
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(meta_parts)}", meta_style))
+                
+                # Retracted article DOI
+                doi_retracted = article.get('doi_retracted', '')
+                if doi_retracted:
+                    doi_url = clean_doi_url(f"https://doi.org/{doi_retracted}")
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Retracted Article DOI:</b> <a href='{doi_url}'>{doi_retracted}</a>", doi_style))
+                
+                # Notice info
+                notice_year = article.get('notice_publication_year', '')
+                notice_date = article.get('notice_publication_date', '')
+                notice_journal = article.get('notice_journal', '')
+                notice_publisher = article.get('notice_publisher', '')
+                notice_volume = article.get('notice_volume', '')
+                notice_issue = article.get('notice_issue', '')
+                notice_pages = article.get('notice_pages', '')
+                doi_notice = article.get('doi_notice', '')
+                
+                if notice_year or notice_journal or doi_notice:
+                    notice_parts = []
+                    notice_parts.append("<b>🔴 Retraction Notice:</b>")
+                    if notice_publisher:
+                        notice_parts.append(f"Publisher: {notice_publisher}")
+                    if notice_journal:
+                        notice_parts.append(f"Journal: {notice_journal}")
+                    if notice_year:
+                        notice_parts.append(f"Year: {notice_year}")
+                    if notice_date and notice_date != '0000-00-00':
+                        notice_parts.append(f"Published: {notice_date}")
+                    if notice_volume:
+                        notice_parts.append(f"Vol. {notice_volume}")
+                    if notice_issue:
+                        notice_parts.append(f"Iss. {notice_issue}")
+                    if notice_pages:
+                        notice_parts.append(f"pp. {notice_pages}")
+                    
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{' | '.join(notice_parts)}", notice_style))
+                    
+                    if doi_notice:
+                        notice_doi_url = clean_doi_url(f"https://doi.org/{doi_notice}")
+                        story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Retraction Notice DOI:</b> <a href='{notice_doi_url}'>{doi_notice}</a>", doi_style))
+                
+                story.append(Spacer(1, 0.15*cm))
+                
+                if idx < len(articles):
+                    story.append(Paragraph("&nbsp;&nbsp;&nbsp;&nbsp;" + "─" * 40, separator_style))
+                    story.append(Spacer(1, 0.1*cm))
+            
+            story.append(Spacer(1, 0.3*cm))
+        
+        story.append(Spacer(1, 0.3*cm))
+        story.append(PageBreak())
+    
+    story.append(Paragraph("Conclusion", title_style))
+    story.append(Spacer(1, 0.5*cm))
+    
+    conclusion_text = f"""
+    This report contains {total_articles} retracted articles grouped by {total_publishers} publishers and their respective journals.
+    The publishers and journals are sorted by the number of retracted articles (descending order).
+    Within each journal, articles are sorted by publication year (newest first).
+    """
+    
+    story.append(Paragraph(conclusion_text, conclusion_style))
+    story.append(Spacer(1, 1*cm))
+    
+    add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
+    
+    story.append(Paragraph(f"© Retraction Detector Pro*2 | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
+    story.append(Paragraph("Report generated using Retraction Article Detector Pro*2", footer_style))
     
     doc.build(story)
     return buffer.getvalue()
@@ -3055,309 +3294,15 @@ def generate_journal_abbreviation(journal_name: str) -> str:
     return abbreviation if abbreviation else "JOURNAL"
 
 # ============================================================================
-# UI STEPS
+# UI STEPS FOR RETRACTION DETECTOR
 # ============================================================================
 
 def step_data_input():
-    """Step 1: Input DOIs"""
+    """Step 1: Input years and countries"""
     st.markdown("""
     <div class="step-card">
-        <h3 style="margin: 0; font-size: 1.3rem;">📥 Step 1: Input Research DOIs</h3>
-        <p style="margin: 5px 0; font-size: 0.9rem;">Enter DOI identifiers to analyze topics and keywords.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    doi_input = st.text_area(
-        "**DOI Input** (one per line or comma-separated):",
-        height=150,
-        placeholder="Examples:\n10.1038/nmat1849\nhttps://doi.org/10.1038/nmat1849",
-        help="Enter up to 300 DOI identifiers"
-    )
-    
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        if st.button("🚀 Start Analysis", type="primary", use_container_width=True):
-            if doi_input:
-                dois = parse_doi_input(doi_input)
-                if dois:
-                    st.session_state.dois = dois
-                    st.session_state.current_step = 2
-                    if 'pdf_cache' in st.session_state:
-                        del st.session_state.pdf_cache
-                    if 'all_reports_generated' in st.session_state:
-                        del st.session_state.all_reports_generated
-                    if 'filtered_articles' in st.session_state:
-                        del st.session_state.filtered_articles
-                    if 'search_query' in st.session_state:
-                        del st.session_state.search_query
-                    st.rerun()
-                else:
-                    st.error("❌ No valid DOI identifiers found.")
-            else:
-                st.error("❌ Please enter at least one DOI")
-
-def step_analysis():
-    """Step 2: Analysis"""
-    st.markdown("""
-    <div class="step-card">
-        <h3 style="margin: 0; font-size: 1.3rem;">🔍 Step 2: Analysis in Progress</h3>
-        <p style="margin: 5px 0; font-size: 0.9rem;">Fetching data from OpenAlex...</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if 'dois' not in st.session_state:
-        st.error("❌ No data to analyze. Please go back to Step 1.")
-        return
-    
-    # Back button
-    col_back, col_main = st.columns([1, 5])
-    with col_back:
-        if st.button("← Back", use_container_width=True):
-            st.session_state.current_step = 1
-            st.rerun()
-    
-    dois = st.session_state.dois
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{len(dois)}</div>
-            <div class="metric-label">DOIs</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{len(dois)//10}s</div>
-            <div class="metric-label">Est. Time</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">8/sec</div>
-            <div class="metric-label">API Rate</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with st.spinner("Fetching data..."):
-        results, successful, failed = fetch_works_by_dois_sync(dois)
-    
-    works_data = []
-    topic_counter = Counter()
-    titles = []
-    
-    for result in results:
-        if result.get('success') and result.get('data'):
-            work = result['data']
-            enriched = enrich_work_data_full(work)
-            
-            if enriched.get('primary_topic'):
-                topic_counter[enriched['primary_topic']] += 1
-            
-            works_data.append(enriched)
-            titles.append(enriched.get('title', ''))
-    
-    keyword_counter = analyze_keywords_parallel(titles)
-    
-    st.session_state.works_data = works_data
-    st.session_state.topic_counter = topic_counter
-    st.session_state.keyword_counter = keyword_counter
-    st.session_state.successful = successful
-    st.session_state.failed = failed
-    
-    st.markdown(f"""
-    <div class="info-message" style="background: linear-gradient(135deg, #2196F315 0%, #0D47A115 100%); border-radius: 8px; padding: 12px; border-left: 3px solid #2196F3; font-size: 0.9rem; margin: 10px 0;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <strong>✅ Analysis Complete!</strong><br>
-                Successfully processed {successful} papers
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{successful}</div>
-            <div class="metric-label">Successful</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{failed}</div>
-            <div class="metric-label">Failed</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{len(topic_counter)}</div>
-            <div class="metric-label">Topics</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("🎯 Continue to Topic Selection", type="primary", use_container_width=True):
-            st.session_state.current_step = 3
-            st.rerun()
-
-def step_topic_selection():
-    """Step 3: Topic Selection"""
-    st.markdown("""
-    <div class="step-card">
-        <h3 style="margin: 0; font-size: 1.3rem;">🎯 Step 3: Select Research Topic</h3>
-        <p style="margin: 5px 0; font-size: 0.9rem;">Choose a topic for deep analysis.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if not st.session_state.works_data:
-        st.error("❌ No data available. Please start from Step 1.")
-        return
-    
-    # Back button
-    col_back, col_main = st.columns([1, 5])
-    with col_back:
-        if st.button("← Back", use_container_width=True):
-            st.session_state.current_step = 2
-            # Clear any existing topic selection when going back
-            if 'selected_topic' in st.session_state:
-                del st.session_state.selected_topic
-            if 'selected_topic_id' in st.session_state:
-                del st.session_state.selected_topic_id
-            if 'selected_years' in st.session_state:
-                del st.session_state.selected_years
-            if 'all_works' in st.session_state:
-                del st.session_state.all_works
-            if 'enriched_count' in st.session_state:
-                del st.session_state.enriched_count
-            if 'pdf_cache' in st.session_state:
-                del st.session_state.pdf_cache
-            if 'all_reports_generated' in st.session_state:
-                del st.session_state.all_reports_generated
-            if 'filtered_articles' in st.session_state:
-                del st.session_state.filtered_articles
-            if 'search_query' in st.session_state:
-                del st.session_state.search_query
-            if 'search_results_count' in st.session_state:
-                del st.session_state.search_results_count
-            if 'years_input' in st.session_state:
-                del st.session_state.years_input
-            st.rerun()
-    
-    topics = st.session_state.topic_counter.most_common()
-    
-    cols = st.columns(2)
-    for idx, (topic, count) in enumerate(topics[:10]):
-        with cols[idx % 2]:
-            is_selected = st.session_state.get('selected_topic') == topic
-            st.markdown(f"""
-            <div class="topic-card" style="background: white; border-radius: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid {'#667eea' if is_selected else '#e0e0e0'}; cursor: pointer; transition: all 0.2s ease;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="font-weight: 600; font-size: 0.9rem;">{topic[:70]}{'...' if len(topic) > 70 else ''}</div>
-                    <span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">
-                        {count} papers
-                    </span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            if st.button(f"Select", key=f"select_{idx}", 
-                        use_container_width=True,
-                        type="primary" if is_selected else "secondary"):
-                # Clear previous topic data when selecting new topic
-                if 'selected_topic' in st.session_state and st.session_state.selected_topic != topic:
-                    if 'selected_topic_id' in st.session_state:
-                        del st.session_state.selected_topic_id
-                    if 'selected_years' in st.session_state:
-                        del st.session_state.selected_years
-                    if 'all_works' in st.session_state:
-                        del st.session_state.all_works
-                    if 'enriched_count' in st.session_state:
-                        del st.session_state.enriched_count
-                    if 'pdf_cache' in st.session_state:
-                        del st.session_state.pdf_cache
-                    if 'all_reports_generated' in st.session_state:
-                        del st.session_state.all_reports_generated
-                    if 'filtered_articles' in st.session_state:
-                        del st.session_state.filtered_articles
-                    if 'search_query' in st.session_state:
-                        del st.session_state.search_query
-                    if 'search_results_count' in st.session_state:
-                        del st.session_state.search_results_count
-                    if 'years_input' in st.session_state:
-                        del st.session_state.years_input
-                
-                st.session_state.selected_topic = topic
-                
-                for work in st.session_state.works_data:
-                    if work.get('primary_topic') == topic:
-                        topic_id = work.get('topic_id')
-                        if topic_id:
-                            st.session_state.selected_topic_id = topic_id
-                            break
-                
-                st.rerun()
-    
-    if 'selected_topic' in st.session_state and 'selected_topic_id' in st.session_state:
-        st.markdown("---")
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.button("⏰ Select Years", type="primary", use_container_width=True):
-                st.session_state.current_step = 4
-                st.rerun()
-
-def step_year_selection():
-    """Step 4: Select publication years - free text input"""
-    st.markdown("""
-    <div class="step-card">
-        <h3 style="margin: 0; font-size: 1.3rem;">⏰ Step 4: Select Publication Years</h3>
-        <p style="margin: 5px 0; font-size: 0.9rem;">Enter the publication years for analysis (any format supported).</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if 'selected_topic_id' not in st.session_state:
-        st.error("❌ Topic not selected. Please go back to Step 3.")
-        return
-    
-    # Back button
-    col_back, col_main = st.columns([1, 5])
-    with col_back:
-        if st.button("← Back", use_container_width=True):
-            st.session_state.current_step = 3
-            # Keep selected topic but clear years and dependent data
-            if 'selected_years' in st.session_state:
-                del st.session_state.selected_years
-            if 'all_works' in st.session_state:
-                del st.session_state.all_works
-            if 'enriched_count' in st.session_state:
-                del st.session_state.enriched_count
-            if 'pdf_cache' in st.session_state:
-                del st.session_state.pdf_cache
-            if 'all_reports_generated' in st.session_state:
-                del st.session_state.all_reports_generated
-            if 'filtered_articles' in st.session_state:
-                del st.session_state.filtered_articles
-            if 'search_query' in st.session_state:
-                del st.session_state.search_query
-            if 'search_results_count' in st.session_state:
-                del st.session_state.search_results_count
-            if 'years_input' in st.session_state:
-                del st.session_state.years_input
-            st.rerun()
-    
-    topic_id = st.session_state.selected_topic_id
-    topic_name = st.session_state.get('selected_topic', 'Selected Topic')
-    
-    st.markdown(f"""
-    <div style="background: white; border-radius: 8px; padding: 12px; border: 1px solid #ced4da; margin-bottom: 15px;">
-        <strong>Selected Topic:</strong> {topic_name}
+        <h3 style="margin: 0; font-size: 1.3rem;">📥 Step 1: Configure Analysis Parameters</h3>
+        <p style="margin: 5px 0; font-size: 0.9rem;">Enter publication years and select countries to analyze retracted articles.</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -3412,12 +3357,57 @@ def step_year_selection():
     
     st.markdown("---")
     
-    # Remove the Reset Cached Data button as per requirement
+    st.markdown("""
+    <div class="filter-section" style="background: rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(102, 126, 234, 0.2);">
+        <div class="filter-header" style="font-size: 1.1rem; font-weight: 600; color: #495057; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+            🌍 Countries (at least one author must belong)
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
+        <strong>Supported formats:</strong>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+        <span style="background: #e3f2fd; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">RU</span>
+        <span style="background: #e3f2fd; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">IT+RU</span>
+        <span style="background: #e3f2fd; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">IT+RU+CN</span>
+        <span style="background: #fff3e0; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; border: 1px dashed #ff9800;">US,GB,DE</span>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    country_input = st.text_input(
+        "Enter country codes",
+        value=st.session_state.get('country_input', ''),
+        placeholder="Example: RU or IT+RU or IT+RU+CN",
+        help="Enter 2-letter country codes separated by + or comma"
+    )
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    if country_input:
+        countries = parse_country_filter(country_input)
+        if countries:
+            country_names = [get_country_name(c) for c in countries]
+            st.markdown(f"""
+            <div style="background: #e8f5e9; border-radius: 8px; padding: 12px; border-left: 4px solid #4CAF50; margin: 10px 0;">
+                <strong>✅ Selected countries:</strong> {', '.join(country_names)}
+                <br><span style="font-size: 0.85rem; color: #666;">Codes: {', '.join(countries)}</span>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style="background: #ffebee; border-radius: 8px; padding: 12px; border-left: 4px solid #f44336; margin: 10px 0;">
+                <strong>❌ Invalid country codes:</strong> Please use 2-letter codes.
+                <br><span style="font-size: 0.85rem; color: #666;">Example: RU, IT, US, GB</span>
+            </div>
+            """, unsafe_allow_html=True)
     
     st.markdown("---")
+    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("📊 Generate Reports", type="primary", use_container_width=True):
+        if st.button("🚀 Start Analysis", type="primary", use_container_width=True):
             if not years_input:
                 st.error("❌ Please enter at least one year.")
                 return
@@ -3427,184 +3417,252 @@ def step_year_selection():
                 st.error("❌ Invalid year format. Please check your input.")
                 return
             
-            # Clear cached data when years change
-            if 'selected_years' in st.session_state and st.session_state.selected_years != years:
-                if 'all_works' in st.session_state:
-                    del st.session_state.all_works
-                if 'enriched_count' in st.session_state:
-                    del st.session_state.enriched_count
-                if 'pdf_cache' in st.session_state:
-                    del st.session_state.pdf_cache
-                if 'all_reports_generated' in st.session_state:
-                    del st.session_state.all_reports_generated
-                if 'filtered_articles' in st.session_state:
-                    del st.session_state.filtered_articles
-                if 'search_query' in st.session_state:
-                    del st.session_state.search_query
-                if 'search_results_count' in st.session_state:
-                    del st.session_state.search_results_count
+            countries = parse_country_filter(country_input) if country_input else []
             
-            st.session_state.selected_years = years
+            st.session_state.years = years
             st.session_state.years_input = years_input
-            st.session_state.current_step = 5
+            st.session_state.countries = countries
+            st.session_state.country_input = country_input
+            st.session_state.current_step = 2
             st.rerun()
 
-def step_results():
-    """Step 5: Results with 3 PDF reports"""
+def step_analysis():
+    """Step 2: Fetching retraction data"""
     st.markdown("""
     <div class="step-card">
-        <h3 style="margin: 0; font-size: 1.3rem;">📊 Step 5: Analysis Results</h3>
-        <p style="margin: 5px 0; font-size: 0.9rem;">Download reports for your research topic.</p>
+        <h3 style="margin: 0; font-size: 1.3rem;">🔍 Step 2: Fetching Retraction Data</h3>
+        <p style="margin: 5px 0; font-size: 0.9rem;">Searching for retracted articles and retraction notices in OpenAlex...</p>
     </div>
     """, unsafe_allow_html=True)
     
-    if 'selected_topic_id' not in st.session_state:
-        st.error("❌ Topic not selected. Please go back.")
+    if 'years' not in st.session_state:
+        st.error("❌ No parameters set. Please go back to Step 1.")
         return
     
-    # Back button
     col_back, col_main = st.columns([1, 5])
     with col_back:
         if st.button("← Back", use_container_width=True):
-            st.session_state.current_step = 4
-            # Keep years but allow changes
+            st.session_state.current_step = 1
             st.rerun()
     
-    topic_id = st.session_state.selected_topic_id
-    topic_name = st.session_state.get('selected_topic', 'Selected Topic')
-    years = st.session_state.get('selected_years', [])
+    years = st.session_state.years
+    countries = st.session_state.countries
     
-    if not years:
-        st.error("❌ Years not selected. Please go back.")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{len(years)}</div>
+            <div class="metric-label">Years</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{len(countries) if countries else 'All'}</div>
+            <div class="metric-label">Countries</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">8/sec</div>
+            <div class="metric-label">API Rate</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Fetch retraction notices
+    with st.spinner("Fetching retraction notices..."):
+        retraction_notices = fetch_retraction_notices_sync(years)
+    
+    st.markdown(f"""
+    <div style="background: #e3f2fd; border-radius: 8px; padding: 12px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <strong>📋 Retraction notices found:</strong> {len(retraction_notices)}
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Fetch retracted articles
+    with st.spinner("Fetching retracted articles..."):
+        retracted_articles = fetch_retracted_articles_sync(years)
+    
+    st.markdown(f"""
+    <div style="background: #e3f2fd; border-radius: 8px; padding: 12px; border-left: 4px solid #2196F3; margin: 10px 0;">
+        <strong>📋 Retracted articles found:</strong> {len(retracted_articles)}
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Combine retracted articles with their notices
+    combined_articles = []
+    matched_notices = set()
+    
+    with st.spinner("Matching retraction notices with retracted articles..."):
+        # First, try to match each retraction notice with a retracted article
+        for notice in retraction_notices:
+            notice_title = notice.get('title', '')
+            if not notice_title:
+                continue
+            
+            matched_article = find_matching_retracted_article(notice_title, retracted_articles)
+            if matched_article:
+                combined = combine_retracted_with_notice(matched_article, notice)
+                enriched = enrich_combined_article(combined)
+                
+                # Check if article has authors from selected countries
+                if is_article_from_selected_countries(enriched, countries):
+                    combined_articles.append(enriched)
+                    matched_notices.add(notice.get('doi', ''))
+        
+        # Add retracted articles that don't have a matching notice
+        for article in retracted_articles:
+            article_doi = article.get('doi', '').replace('https://doi.org/', '')
+            
+            # Check if this article already has a notice matched
+            already_matched = False
+            for combined in combined_articles:
+                if combined.get('doi_retracted') == article_doi:
+                    already_matched = True
+                    break
+            
+            if not already_matched:
+                combined = {
+                    'retracted': article,
+                    'notice': None,
+                    'doi_retracted': article_doi,
+                    'doi_notice': '',
+                    'title': article.get('title', 'No title'),
+                    'publication_year': article.get('publication_year', ''),
+                    'publication_date': article.get('publication_date', ''),
+                }
+                enriched = enrich_combined_article(combined)
+                
+                if is_article_from_selected_countries(enriched, countries):
+                    combined_articles.append(enriched)
+    
+    st.session_state.combined_articles = combined_articles
+    st.session_state.retraction_notices = retraction_notices
+    st.session_state.retracted_articles = retracted_articles
+    
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, #2196F315 0%, #0D47A115 100%); border-radius: 8px; padding: 12px; border-left: 3px solid #2196F3; font-size: 0.9rem; margin: 10px 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <strong>✅ Analysis Complete!</strong><br>
+                Found {len(combined_articles)} combined retracted articles with notices
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{len(retraction_notices)}</div>
+            <div class="metric-label">Retraction Notices</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{len(retracted_articles)}</div>
+            <div class="metric-label">Retracted Articles</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{len(combined_articles)}</div>
+            <div class="metric-label">Combined Entries</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("📊 Generate Reports", type="primary", use_container_width=True):
+            if combined_articles:
+                st.session_state.current_step = 3
+                st.rerun()
+            else:
+                st.error("❌ No combined articles found. Please try different parameters.")
+
+def step_results():
+    """Step 3: Results with 3 PDF reports"""
+    st.markdown("""
+    <div class="step-card">
+        <h3 style="margin: 0; font-size: 1.3rem;">📊 Step 3: Retraction Analysis Results</h3>
+        <p style="margin: 5px 0; font-size: 0.9rem;">Download reports for retracted articles.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if 'combined_articles' not in st.session_state:
+        st.error("❌ No data available. Please go back.")
         return
     
-    # Fetch ALL works for the topic with given years (no citation filtering)
-    if 'all_works' not in st.session_state:
-        with st.spinner(f"Loading ALL works for topic '{topic_name}'..."):
-            all_works = fetch_all_works_by_topic_sync(topic_id, years)
-            
-            if not all_works:
-                st.error("❌ No works found for this topic and year range.")
-                return
-            
-            enriched_works = []
-            for work in all_works:
-                enriched = enrich_work_data_full(work)
-                if enriched.get('title') and enriched.get('title') != 'No title':
-                    enriched_works.append(enriched)
-            
-            st.session_state.all_works = enriched_works
-            st.session_state.enriched_count = len(enriched_works)
-    else:
-        enriched_works = st.session_state.all_works
+    col_back, col_main = st.columns([1, 5])
+    with col_back:
+        if st.button("← Back", use_container_width=True):
+            st.session_state.current_step = 2
+            st.rerun()
     
-    if not enriched_works:
-        st.warning("⚠️ No valid works found after enrichment.")
+    combined_articles = st.session_state.combined_articles
+    years = st.session_state.years
+    countries = st.session_state.countries
+    
+    if not combined_articles:
+        st.warning("⚠️ No combined articles found. Please try different parameters.")
         return
     
-    # Use filtered articles if available, otherwise use all works
-    if 'filtered_articles' in st.session_state and st.session_state.filtered_articles:
-        current_articles = st.session_state.filtered_articles
-        st.info(f"🔍 Showing {len(current_articles)} filtered articles (out of {len(enriched_works)} total)")
-    else:
-        current_articles = enriched_works
-    
-    # Statistics
-    total_articles = len(current_articles)
-    total_citations = sum(w.get('cited_by_count', 0) for w in current_articles)
-    avg_citations = total_citations / total_articles if total_articles > 0 else 0
-    
-    # Sorting options
-    st.markdown("### ⚙️ Report Sorting Options")
-    
-    col_sort1, col_sort2, col_sort3 = st.columns(3)
-    
-    with col_sort1:
-        sort_publisher = st.radio(
-            "Publisher → Journal sorting:",
-            options=["Alphabetical", "By Article Count"],
-            index=0,
-            key="sort_publisher"
-        )
-    
-    with col_sort2:
-        sort_citations = st.radio(
-            "Citations Report sorting:",
-            options=["Citations per Year", "Total Citations", "Publication Date (Newest First)"],
-            index=0,
-            key="sort_citations"
-        )
-    
-    with col_sort3:
-        sort_country = st.radio(
-            "Country → Affiliation sorting:",
-            options=["Alphabetical", "By Article Count"],
-            index=0,
-            key="sort_country"
-        )
-    
-    # Convert UI options to function parameters
-    sort_publisher_param = 'alphabetical' if sort_publisher == "Alphabetical" else 'by_count'
-    sort_citations_param = 'citations_per_year' if sort_citations == "Citations per Year" else ('total_citations' if sort_citations == "Total Citations" else 'publication_date')
-    sort_country_param = 'alphabetical' if sort_country == "Alphabetical" else 'by_count'
-    
-    # Generate groupings with caching using unique keys
+    # Generate groupings
     with st.spinner("Generating report groupings..."):
-        # Create unique cache keys based on all parameters
-        filter_hash = hashlib.md5(str(sorted([a.get('doi', '') for a in current_articles])).encode()).hexdigest()[:8]
-        
-        publisher_hierarchy = cached_group_articles_by_publisher_journal(
-            tuple(current_articles), 
-            sort_publisher_param
+        # Group by country -> affiliation
+        country_hierarchy = cached_group_by_country_affiliation(
+            tuple(combined_articles), 
+            tuple(countries) if countries else ()
         )
         
-        country_hierarchy = cached_group_articles_by_country_affiliation(
-            tuple(current_articles), 
-            sort_country_param
-        )
+        # Group by author
+        author_groups = cached_group_by_author(tuple(combined_articles))
         
-        citations_sorted = cached_sort_articles_by_citations(
-            tuple(current_articles), 
-            sort_citations_param
-        )
+        # Group by publisher -> journal
+        publisher_hierarchy = cached_group_by_publisher_journal(tuple(combined_articles))
+    
+    total_articles = len(combined_articles)
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-value">{total_articles:,}</div>
-            <div class="metric-label">Total Articles</div>
+            <div class="metric-label">Total Retracted Articles</div>
         </div>
         """, unsafe_allow_html=True)
     with col2:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{len(publisher_hierarchy)}</div>
-            <div class="metric-label">Publishers</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col3:
         st.markdown(f"""
         <div class="metric-card">
             <div class="metric-value">{len(country_hierarchy)}</div>
             <div class="metric-label">Countries</div>
         </div>
         """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{len(author_groups)}</div>
+            <div class="metric-label">Authors</div>
+        </div>
+        """, unsafe_allow_html=True)
     with col4:
         st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-value">{avg_citations:.1f}</div>
-            <div class="metric-label">Avg Citations/Year</div>
+            <div class="metric-value">{len(publisher_hierarchy)}</div>
+            <div class="metric-label">Publishers</div>
         </div>
         """, unsafe_allow_html=True)
     
     st.markdown("---")
     st.markdown("### 📥 Download Reports")
     
-    journal_name = topic_name
-    journal_abbr = generate_journal_abbreviation(journal_name)
     logo_path = None
-    
     possible_paths = [
         "logo.png",
         "./logo.png",
@@ -3622,137 +3680,19 @@ def step_results():
     if 'all_reports_generated' not in st.session_state:
         st.session_state.all_reports_generated = False
     
-    # Create unique cache keys including all parameters
-    filter_hash = hashlib.md5(str(sorted([a.get('doi', '') for a in current_articles])).encode()).hexdigest()[:8]
     years_hash = hashlib.md5(','.join(map(str, years)).encode()).hexdigest()[:8]
+    countries_hash = hashlib.md5(','.join(countries).encode()).hexdigest()[:8] if countries else 'all'
+    filter_hash = hashlib.md5(str(sorted([a.get('doi_retracted', '') for a in combined_articles])).encode()).hexdigest()[:8]
     
-    cache_key_publisher = f"publisher_{topic_id}_{years_hash}_{filter_hash}_{sort_publisher_param}"
-    cache_key_citations = f"citations_{topic_id}_{years_hash}_{filter_hash}_{sort_citations_param}"
-    cache_key_country = f"country_{topic_id}_{years_hash}_{filter_hash}_{sort_country_param}"
-    
-    # Advanced Search button
-    col_adv1, col_adv2, col_adv3 = st.columns([1, 2, 1])
-    with col_adv2:
-        if st.button("🔍 Advanced Search (Filter Articles)", type="secondary", use_container_width=True):
-            st.session_state.current_step = 6
-            st.rerun()
-    
-    st.markdown("---")
-    
-    col_gen1, col_gen2, col_gen3 = st.columns([1, 1, 1])
-    with col_gen2:
-        if not st.session_state.all_reports_generated:
-            if st.button("⚡ Generate All Reports", type="primary", use_container_width=True):
-                with st.spinner("Generating all reports..."):
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    
-                    status_text.text("Generating Publisher → Journal report...")
-                    if cache_key_publisher not in st.session_state.pdf_cache:
-                        st.session_state.pdf_cache[cache_key_publisher] = generate_pdf_by_publisher_journal(
-                            journal_name, journal_abbr, years,
-                            publisher_hierarchy, logo_path,
-                            "Report by Publisher & Journal",
-                            sort_publisher_param
-                        )
-                    progress_bar.progress(0.33)
-                    
-                    status_text.text("Generating Citations per Year report...")
-                    if cache_key_citations not in st.session_state.pdf_cache:
-                        st.session_state.pdf_cache[cache_key_citations] = generate_pdf_by_citations(
-                            journal_name, journal_abbr, years,
-                            citations_sorted, logo_path,
-                            "Report by Citations",
-                            sort_citations_param
-                        )
-                    progress_bar.progress(0.66)
-                    
-                    status_text.text("Generating Country → Affiliation report...")
-                    if cache_key_country not in st.session_state.pdf_cache:
-                        st.session_state.pdf_cache[cache_key_country] = generate_pdf_by_country_affiliation(
-                            journal_name, journal_abbr, years,
-                            country_hierarchy, logo_path,
-                            "Report by Country & Affiliation",
-                            sort_country_param
-                        )
-                    progress_bar.progress(1.0)
-                    
-                    status_text.text("✅ All reports generated!")
-                    st.session_state.all_reports_generated = True
-                    time.sleep(0.5)
-                    st.rerun()
-        else:
-            st.success("✅ All reports already generated! Use the buttons below to download.")
-    
-    st.markdown("---")
+    cache_key_country = f"retraction_country_{years_hash}_{countries_hash}_{filter_hash}"
+    cache_key_author = f"retraction_author_{years_hash}_{countries_hash}_{filter_hash}"
+    cache_key_publisher = f"retraction_publisher_{years_hash}_{countries_hash}_{filter_hash}"
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.markdown("**📚 Report 1: Publisher → Journal**")
-        st.markdown(f"*{sort_publisher} sorting*")
-        
-        if cache_key_publisher in st.session_state.pdf_cache:
-            pdf_data = st.session_state.pdf_cache[cache_key_publisher]
-        else:
-            pdf_data = None
-        
-        if pdf_data is not None:
-            filename = f"{journal_abbr}_{format_year_filter_for_filename(years)}_publisher_journal.pdf"
-            st.download_button(
-                label="📄 Download Publisher Report",
-                data=pdf_data,
-                file_name=filename,
-                mime="application/pdf",
-                use_container_width=True,
-                key=f"pdf_publisher_download_{cache_key_publisher}"
-            )
-        else:
-            if st.button("📄 Generate Publisher Report", key=f"gen_publisher_{cache_key_publisher}", use_container_width=True):
-                with st.spinner("Generating Publisher Report..."):
-                    pdf_data = generate_pdf_by_publisher_journal(
-                        journal_name, journal_abbr, years,
-                        publisher_hierarchy, logo_path,
-                        "Report by Publisher & Journal",
-                        sort_publisher_param
-                    )
-                    st.session_state.pdf_cache[cache_key_publisher] = pdf_data
-                    st.rerun()
-    
-    with col2:
-        st.markdown("**📈 Report 2: Citations**")
-        st.markdown(f"*{sort_citations} sorting*")
-        
-        if cache_key_citations in st.session_state.pdf_cache:
-            pdf_data = st.session_state.pdf_cache[cache_key_citations]
-        else:
-            pdf_data = None
-        
-        if pdf_data is not None:
-            filename = f"{journal_abbr}_{format_year_filter_for_filename(years)}_citations.pdf"
-            st.download_button(
-                label="📄 Download Citations Report",
-                data=pdf_data,
-                file_name=filename,
-                mime="application/pdf",
-                use_container_width=True,
-                key=f"pdf_citations_download_{cache_key_citations}"
-            )
-        else:
-            if st.button("📄 Generate Citations Report", key=f"gen_citations_{cache_key_citations}", use_container_width=True):
-                with st.spinner("Generating Citations Report..."):
-                    pdf_data = generate_pdf_by_citations(
-                        journal_name, journal_abbr, years,
-                        citations_sorted, logo_path,
-                        "Report by Citations",
-                        sort_citations_param
-                    )
-                    st.session_state.pdf_cache[cache_key_citations] = pdf_data
-                    st.rerun()
-    
-    with col3:
-        st.markdown("**🌍 Report 3: Country → Affiliation**")
-        st.markdown(f"*{sort_country} sorting*")
+        st.markdown("**🌍 Report 1: Country → Affiliation**")
+        st.markdown("*Sorted by retraction count*")
         
         if cache_key_country in st.session_state.pdf_cache:
             pdf_data = st.session_state.pdf_cache[cache_key_country]
@@ -3760,276 +3700,127 @@ def step_results():
             pdf_data = None
         
         if pdf_data is not None:
-            filename = f"{journal_abbr}_{format_year_filter_for_filename(years)}_country_affiliation.pdf"
+            filename = f"retraction_country_{format_year_filter_for_filename(years)}.pdf"
             st.download_button(
                 label="📄 Download Country Report",
                 data=pdf_data,
                 file_name=filename,
                 mime="application/pdf",
                 use_container_width=True,
-                key=f"pdf_country_download_{cache_key_country}"
+                key=f"pdf_country_{cache_key_country}"
             )
         else:
             if st.button("📄 Generate Country Report", key=f"gen_country_{cache_key_country}", use_container_width=True):
-                with st.spinner("Generating Country Report..."):
-                    pdf_data = generate_pdf_by_country_affiliation(
-                        journal_name, journal_abbr, years,
-                        country_hierarchy, logo_path,
-                        "Report by Country & Affiliation",
-                        sort_country_param
+                with st.spinner("Generating Country → Affiliation report..."):
+                    pdf_data = generate_retraction_pdf_by_country_affiliation(
+                        country_hierarchy,
+                        years,
+                        countries,
+                        logo_path,
+                        "Report by Country & Affiliation"
                     )
                     st.session_state.pdf_cache[cache_key_country] = pdf_data
                     st.rerun()
     
-    st.markdown("---")
-    
-    if st.session_state.all_reports_generated:
-        if all(key in st.session_state.pdf_cache for key in [cache_key_publisher, cache_key_citations, cache_key_country]):
-            try:
-                import zipfile
-                zip_buffer = io.BytesIO()
-                with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-                    zip_file.writestr(f"{journal_abbr}_{format_year_filter_for_filename(years)}_publisher_journal.pdf", 
-                                     st.session_state.pdf_cache[cache_key_publisher])
-                    zip_file.writestr(f"{journal_abbr}_{format_year_filter_for_filename(years)}_citations.pdf", 
-                                     st.session_state.pdf_cache[cache_key_citations])
-                    zip_file.writestr(f"{journal_abbr}_{format_year_filter_for_filename(years)}_country_affiliation.pdf", 
-                                     st.session_state.pdf_cache[cache_key_country])
-                
-                zip_data = zip_buffer.getvalue()
-                
-                col_zip1, col_zip2, col_zip3 = st.columns([1, 2, 1])
-                with col_zip2:
-                    st.download_button(
-                        label="📦 Download All Reports (ZIP archive)",
-                        data=zip_data,
-                        file_name=f"{journal_abbr}_{format_year_filter_for_filename(years)}_all_reports.zip",
-                        mime="application/zip",
-                        use_container_width=True,
-                        key="download_all_zip"
-                    )
-            except Exception as e:
-                st.error(f"Error creating ZIP archive: {e}")
-    
-    st.markdown("---")
-    
-    if st.button("🔄 New Analysis", use_container_width=True):
-        keys_to_clear = ['current_step', 'dois', 'works_data', 'topic_counter', 
-                        'keyword_counter', 'successful', 'failed', 'selected_topic',
-                        'selected_topic_id', 'selected_years', 'all_works', 
-                        'enriched_count', 'years_input', 'pdf_cache', 'all_reports_generated',
-                        'filtered_articles', 'search_query', 'search_results_count']
-        for key in keys_to_clear:
-            if key in st.session_state:
-                del st.session_state[key]
-        st.session_state.current_step = 1
-        st.rerun()
-
-# ============================================================================
-# STEP 6: ADVANCED SEARCH
-# ============================================================================
-
-def step_advanced_search():
-    """Step 6: Advanced search and filtering of articles"""
-    st.markdown("""
-    <div class="step-card">
-        <h3 style="margin: 0; font-size: 1.3rem;">🔍 Step 6: Advanced Search</h3>
-        <p style="margin: 5px 0; font-size: 0.9rem;">Filter articles by title using advanced search syntax.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    if 'all_works' not in st.session_state:
-        st.error("❌ No data available. Please go back to Step 5.")
-        return
-    
-    # Back button
-    col_back, col_main = st.columns([1, 5])
-    with col_back:
-        if st.button("← Back to Reports", use_container_width=True):
-            st.session_state.current_step = 5
-            st.rerun()
-    
-    all_articles = st.session_state.all_works
-    total_articles = len(all_articles)
-    
-    st.markdown(f"""
-    <div style="background: white; border-radius: 8px; padding: 12px; border: 1px solid #ced4da; margin-bottom: 15px;">
-        <strong>Total articles available:</strong> {total_articles}
-        <br><small style="color: #666;">Enter search query to filter articles by title</small>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="filter-section" style="background: rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(102, 126, 234, 0.2);">
-        <div class="filter-header" style="font-size: 1.1rem; font-weight: 600; color: #495057; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
-            🔍 Search Syntax
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
-        <strong>Supported syntax:</strong>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        st.markdown("""
-        <div style="background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #667eea; margin-bottom: 8px;">
-            <code style="background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-family: monospace;">"high temperature"</code> — Exact phrase match
-        </div>
-        <div style="background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #27ae60; margin-bottom: 8px;">
-            <code style="background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-family: monospace;">high temperature</code> — Both words must appear (AND logic)
-        </div>
-        <div style="background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #e67e22; margin-bottom: 8px;">
-            <code style="background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-family: monospace;">catal*</code> — Wildcard: matches catalysis, catalyst, catalytic, etc.
-        </div>
-        """, unsafe_allow_html=True)
-    
     with col2:
-        st.markdown("""
-        <div style="background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #8e44ad; margin-bottom: 8px;">
-            <code style="background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-family: monospace;">fuel cell</code> — Automatically matches "fuel cells" (plural support)
-        </div>
-        <div style="background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border-left: 3px solid #e74c3c; margin-bottom: 8px;">
-            <code style="background: #e9ecef; padding: 2px 6px; border-radius: 4px; font-family: monospace;">"high temperature" catalysis*</code> — Combined: exact phrase AND wildcard
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Search input
-    search_query = st.text_input(
-        "Enter search query:",
-        value=st.session_state.get('search_query', ''),
-        placeholder='Example: "high temperature" catalysis* OR "fuel cell" polymer',
-        help="Use quotes for exact phrases, * for wildcards"
-    )
-    
-    col_search1, col_search2, col_search3 = st.columns([1, 1, 1])
-    
-    with col_search1:
-        if st.button("🔍 Search", type="primary", use_container_width=True):
-            if search_query and search_query.strip():
-                with st.spinner("Filtering articles..."):
-                    filtered = filter_articles_by_query(all_articles, search_query)
-                    st.session_state.filtered_articles = filtered
-                    st.session_state.search_query = search_query
-                    st.session_state.search_results_count = len(filtered)
+        st.markdown("**👤 Report 2: Author**")
+        st.markdown("*Sorted by retraction count per author*")
+        
+        if cache_key_author in st.session_state.pdf_cache:
+            pdf_data = st.session_state.pdf_cache[cache_key_author]
+        else:
+            pdf_data = None
+        
+        if pdf_data is not None:
+            filename = f"retraction_author_{format_year_filter_for_filename(years)}.pdf"
+            st.download_button(
+                label="📄 Download Author Report",
+                data=pdf_data,
+                file_name=filename,
+                mime="application/pdf",
+                use_container_width=True,
+                key=f"pdf_author_{cache_key_author}"
+            )
+        else:
+            if st.button("📄 Generate Author Report", key=f"gen_author_{cache_key_author}", use_container_width=True):
+                with st.spinner("Generating Author report..."):
+                    pdf_data = generate_retraction_pdf_by_author(
+                        author_groups,
+                        years,
+                        countries,
+                        logo_path,
+                        "Report by Author"
+                    )
+                    st.session_state.pdf_cache[cache_key_author] = pdf_data
                     st.rerun()
-            else:
-                st.warning("⚠️ Please enter a search query.")
     
-    with col_search2:
-        if st.button("🔄 Reset Filter", use_container_width=True):
-            if 'filtered_articles' in st.session_state:
-                del st.session_state.filtered_articles
-            if 'search_query' in st.session_state:
-                del st.session_state.search_query
-            if 'search_results_count' in st.session_state:
-                del st.session_state.search_results_count
-            st.rerun()
-    
-    with col_search3:
-        if st.button("📊 Generate Reports from Filtered", use_container_width=True, type="secondary"):
-            if 'filtered_articles' in st.session_state and st.session_state.filtered_articles:
-                st.session_state.current_step = 5
-                st.rerun()
-            else:
-                st.warning("⚠️ No filtered articles to generate reports from.")
-    
-    # Show results
-    if 'filtered_articles' in st.session_state and st.session_state.filtered_articles:
-        filtered = st.session_state.filtered_articles
-        query = st.session_state.get('search_query', '')
+    with col3:
+        st.markdown("**📚 Report 3: Publisher → Journal**")
+        st.markdown("*Sorted by retraction count*")
         
-        st.markdown("---")
-        st.markdown(f"### 📋 Search Results: {len(filtered)} articles found")
+        if cache_key_publisher in st.session_state.pdf_cache:
+            pdf_data = st.session_state.pdf_cache[cache_key_publisher]
+        else:
+            pdf_data = None
         
-        if query:
-            st.markdown(f"**Query:** `{query}`")
-        
-        # Show preview of filtered articles
-        with st.expander(f"Show {len(filtered)} filtered articles", expanded=False):
-            for idx, article in enumerate(filtered[:50], 1):
-                title = article.get('title', 'No title')
-                year = article.get('publication_year', '')
-                journal = article.get('journal_name', '')
-                
-                # Get publication type info
-                type_label = article.get('type_label', 'Other')
-                type_icon = article.get('type_icon', '📎')
-                type_color = article.get('type_color', '#7f8c8d')
-                
-                st.markdown(f"""
-                <div class="result-card" style="padding: 10px; margin-bottom: 6px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-weight: 600; color: #667eea;">{idx}.</span>
-                        <span style="font-weight: 500;">{title}</span>
-                        <span style="color: {type_color}; font-size: 0.85rem;">{type_icon} {type_label}</span>
-                    </div>
-                    <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">
-                        {f'Year: {year} ' if year else ''}
-                        {f'| Journal: {journal}' if journal else ''}
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            if len(filtered) > 50:
-                st.info(f"Showing first 50 of {len(filtered)} articles")
-        
-        # Show statistics
-        st.markdown("---")
-        st.markdown("### 📊 Filtered Statistics")
-        
-        filtered_years = [a.get('publication_year', 0) for a in filtered if a.get('publication_year', 0) > 0]
-        filtered_citations = sum(a.get('cited_by_count', 0) for a in filtered)
-        filtered_avg_citations = filtered_citations / len(filtered) if filtered else 0
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{len(filtered)}</div>
-                <div class="metric-label">Filtered Articles</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col2:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{filtered_citations}</div>
-                <div class="metric-label">Total Citations</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col3:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{filtered_avg_citations:.1f}</div>
-                <div class="metric-label">Avg Citations/Article</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        st.markdown("---")
-        
-        # Generate reports button
-        col_go1, col_go2, col_go3 = st.columns([1, 2, 1])
-        with col_go2:
-            if st.button("📊 Generate Reports from Filtered Articles", type="primary", use_container_width=True):
-                st.session_state.current_step = 5
-                st.rerun()
-    
-    elif 'filtered_articles' in st.session_state and not st.session_state.filtered_articles:
-        st.warning("⚠️ No articles match your search query. Try a different query or reset the filter.")
+        if pdf_data is not None:
+            filename = f"retraction_publisher_{format_year_filter_for_filename(years)}.pdf"
+            st.download_button(
+                label="📄 Download Publisher Report",
+                data=pdf_data,
+                file_name=filename,
+                mime="application/pdf",
+                use_container_width=True,
+                key=f"pdf_publisher_{cache_key_publisher}"
+            )
+        else:
+            if st.button("📄 Generate Publisher Report", key=f"gen_publisher_{cache_key_publisher}", use_container_width=True):
+                with st.spinner("Generating Publisher → Journal report..."):
+                    pdf_data = generate_retraction_pdf_by_publisher_journal(
+                        publisher_hierarchy,
+                        years,
+                        countries,
+                        logo_path,
+                        "Report by Publisher & Journal"
+                    )
+                    st.session_state.pdf_cache[cache_key_publisher] = pdf_data
+                    st.rerun()
     
     st.markdown("---")
     
-    # New analysis button
+    if all(key in st.session_state.pdf_cache for key in [cache_key_country, cache_key_author, cache_key_publisher]):
+        try:
+            import zipfile
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                zip_file.writestr(f"retraction_country_{format_year_filter_for_filename(years)}.pdf", 
+                                 st.session_state.pdf_cache[cache_key_country])
+                zip_file.writestr(f"retraction_author_{format_year_filter_for_filename(years)}.pdf", 
+                                 st.session_state.pdf_cache[cache_key_author])
+                zip_file.writestr(f"retraction_publisher_{format_year_filter_for_filename(years)}.pdf", 
+                                 st.session_state.pdf_cache[cache_key_publisher])
+            
+            zip_data = zip_buffer.getvalue()
+            
+            col_zip1, col_zip2, col_zip3 = st.columns([1, 2, 1])
+            with col_zip2:
+                st.download_button(
+                    label="📦 Download All Reports (ZIP archive)",
+                    data=zip_data,
+                    file_name=f"retraction_all_reports_{format_year_filter_for_filename(years)}.zip",
+                    mime="application/zip",
+                    use_container_width=True,
+                    key="download_all_zip"
+                )
+        except Exception as e:
+            st.error(f"Error creating ZIP archive: {e}")
+    
+    st.markdown("---")
+    
     if st.button("🔄 New Analysis", use_container_width=True):
-        keys_to_clear = ['current_step', 'dois', 'works_data', 'topic_counter', 
-                        'keyword_counter', 'successful', 'failed', 'selected_topic',
-                        'selected_topic_id', 'selected_years', 'all_works', 
-                        'enriched_count', 'years_input', 'pdf_cache', 'all_reports_generated',
-                        'filtered_articles', 'search_query', 'search_results_count']
+        keys_to_clear = ['current_step', 'years', 'years_input', 'countries', 'country_input',
+                        'retraction_notices', 'retracted_articles', 'combined_articles',
+                        'pdf_cache', 'all_reports_generated']
         for key in keys_to_clear:
             if key in st.session_state:
                 del st.session_state[key]
@@ -4094,22 +3885,29 @@ def main():
         </div>
         """, unsafe_allow_html=True)
     
+    # Title
+    st.markdown("""
+    <div style="text-align: center; margin-bottom: 20px;">
+        <h1 class="main-header">Retraction Article Detector Pro*2</h1>
+        <p style="color: #6c757d; font-size: 1rem; margin-top: -5px;">
+            Detect and analyze retracted articles using OpenAlex data
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     # Progress bar
-    steps = ["Input", "Analysis", "Topic", "Years", "Reports", "Search"]
+    steps = ["Parameters", "Analysis", "Reports"]
     current_step = st.session_state.current_step
-    progress = (current_step - 1) / 5
+    progress = (current_step - 1) / 2
     
     st.markdown(f"""
     <div class="progress-container" style="background: #f5f5f5; border-radius: 8px; height: 6px; margin: 20px 0; overflow: hidden;">
         <div class="progress-bar" style="height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 8px; transition: width 0.5s ease; width: {progress * 100}%;"></div>
     </div>
     <div class="step-indicator" style="display: flex; justify-content: space-between; margin: 15px 0; font-size: 0.85rem; color: #666;">
-        <span class="{'active' if current_step >= 1 else ''}" style="color: {'#667eea' if current_step >= 1 else '#666'}; font-weight: {'600' if current_step >= 1 else '400'};">📥 Input</span>
+        <span class="{'active' if current_step >= 1 else ''}" style="color: {'#667eea' if current_step >= 1 else '#666'}; font-weight: {'600' if current_step >= 1 else '400'};">📥 Parameters</span>
         <span class="{'active' if current_step >= 2 else ''}" style="color: {'#667eea' if current_step >= 2 else '#666'}; font-weight: {'600' if current_step >= 2 else '400'};">🔍 Analysis</span>
-        <span class="{'active' if current_step >= 3 else ''}" style="color: {'#667eea' if current_step >= 3 else '#666'}; font-weight: {'600' if current_step >= 3 else '400'};">🎯 Topic</span>
-        <span class="{'active' if current_step >= 4 else ''}" style="color: {'#667eea' if current_step >= 4 else '#666'}; font-weight: {'600' if current_step >= 4 else '400'};">⏰ Years</span>
-        <span class="{'active' if current_step >= 5 else ''}" style="color: {'#667eea' if current_step >= 5 else '#666'}; font-weight: {'600' if current_step >= 5 else '400'};">📊 Reports</span>
-        <span class="{'active' if current_step >= 6 else ''}" style="color: {'#667eea' if current_step >= 6 else '#666'}; font-weight: {'600' if current_step >= 6 else '400'};">🔍 Search</span>
+        <span class="{'active' if current_step >= 3 else ''}" style="color: {'#667eea' if current_step >= 3 else '#666'}; font-weight: {'600' if current_step >= 3 else '400'};">📊 Reports</span>
     </div>
     """, unsafe_allow_html=True)
     
@@ -4119,19 +3917,13 @@ def main():
     elif st.session_state.current_step == 2:
         step_analysis()
     elif st.session_state.current_step == 3:
-        step_topic_selection()
-    elif st.session_state.current_step == 4:
-        step_year_selection()
-    elif st.session_state.current_step == 5:
         step_results()
-    elif st.session_state.current_step == 6:
-        step_advanced_search()
     
     # Footer
     st.markdown("""
     <div class="footer">
-        <p>© CTA, https://chimicatechnoacta.ru / developed by daM©</p>
-        <p style="font-size: 0.7rem; color: #aaa;">CTA Article Recommender Pro*2 with multi-report generation</p>
+        <p>© Retraction Detector Pro*2 / developed by daM©</p>
+        <p style="font-size: 0.7rem; color: #aaa;">Retraction Article Detector Pro*2 with multi-report generation</p>
     </div>
     """, unsafe_allow_html=True)
 
