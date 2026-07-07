@@ -1869,7 +1869,7 @@ def enrich_combined_article(combined: dict) -> dict:
     # Get journal info from notice
     notice_primary_location = notice.get('primary_location', {}) if notice else {}
     notice_source = notice_primary_location.get('source', {}) if notice_primary_location else {}
-    notice_journal = notice_source.get('display_name', '') if notice_source else 
+    notice_journal = notice_source.get('display_name', '') if notice_source else '' 
     notice_publisher = notice_source.get('host_organization_name', '') if notice_source else ''
     if not notice_publisher and notice_source:
         notice_publisher = notice_source.get('publisher', '')
