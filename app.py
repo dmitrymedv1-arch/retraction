@@ -3465,13 +3465,6 @@ def step_retraction_search():
         </div>
         """, unsafe_allow_html=True)
     
-    # Check if search already completed
-    if 'search_completed' in st.session_state and st.session_state.search_completed:
-        st.info("✅ Search already completed. Redirecting to reports...")
-        st.session_state.current_step = 3
-        st.rerun()
-        return
-    
     with st.spinner("Fetching retracted articles..."):
         retracted_articles = fetch_retracted_works_by_years_sync(years)
         st.session_state.retracted_articles = retracted_articles
@@ -3489,8 +3482,6 @@ def step_retraction_search():
         
         # First, match retracted articles with their notices
         for article in retracted_articles:
-            if article is None:
-                continue
             article_doi = (article.get('doi') or '').replace('https://doi.org/', '')
             matching_notices = find_retraction_notices_for_article(article, retraction_notices)
             
@@ -3502,8 +3493,6 @@ def step_retraction_search():
                 
                 # Mark notices as matched
                 for notice in matching_notices:
-                    if notice is None:
-                        continue
                     notice_doi = (notice.get('doi') or '').replace('https://doi.org/', '')
                     if notice_doi:
                         matched_article_dois.add(notice_doi)
@@ -3515,16 +3504,12 @@ def step_retraction_search():
         
         # Add notices that don't have matching articles
         for notice in retraction_notices:
-            if notice is None:
-                continue
-            notice_doi = (notice.get('doi') or '').replace('https://doi.org/', '')
+            notice_doi = notice.get('doi', '').replace('https://doi.org/', '')
             if notice_doi not in matched_article_dois:
                 # Check if this notice might have been matched already
                 is_matched = False
                 clean_notice_title = extract_clean_title_from_retraction_notice(notice)
                 for article in retracted_articles:
-                    if article is None:
-                        continue
                     clean_article_title = extract_clean_title_from_retracted_article(article)
                     if clean_notice_title and clean_article_title:
                         if (clean_notice_title.lower().strip() == clean_article_title.lower().strip() or
@@ -3615,18 +3600,12 @@ def step_retraction_search():
         </div>
         """, unsafe_allow_html=True)
     
-    # Mark search as completed and auto-redirect to reports
-    st.session_state.search_completed = True
-    
     st.markdown("---")
-    st.success("✅ Search complete! Redirecting to reports generation...")
-    
-    # Small delay to show the success message before redirecting
-    time.sleep(1)
-    
-    # Automatically transition to reports step
-    st.session_state.current_step = 3
-    st.rerun()
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("📊 Generate Reports", type="primary", use_container_width=True):
+            st.session_state.current_step = 3
+            st.rerun()
 
 def step_retraction_results():
     """Step 3: Retraction Results with 3 PDF reports"""
