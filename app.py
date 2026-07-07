@@ -3504,7 +3504,7 @@ def step_retraction_search():
         
         # Add notices that don't have matching articles
         for notice in retraction_notices:
-            notice_doi = notice.get('doi', '').replace('https://doi.org/', '')
+            notice_doi = (notice.get('doi') or '').replace('https://doi.org/', '')
             if notice_doi not in matched_article_dois:
                 # Check if this notice might have been matched already
                 is_matched = False
