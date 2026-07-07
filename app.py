@@ -4053,11 +4053,16 @@ def step_retraction_analysis():
         </div>
         """, unsafe_allow_html=True)
     
-    with st.spinner("Fetching retracted articles and retraction notices..."):
-        retracted_articles, retraction_notices = fetch_retraction_works_sync(years)
-    
-    st.session_state.retracted_articles = retracted_articles
-    st.session_state.retraction_notices = retraction_notices
+    # Check if data already exists in session_state
+    if 'retracted_articles' not in st.session_state or 'retraction_notices' not in st.session_state:
+        with st.spinner("Fetching retracted articles and retraction notices..."):
+            retracted_articles, retraction_notices = fetch_retraction_works_sync(years)
+        
+        st.session_state.retracted_articles = retracted_articles
+        st.session_state.retraction_notices = retraction_notices
+    else:
+        retracted_articles = st.session_state.retracted_articles
+        retraction_notices = st.session_state.retraction_notices
     
     st.markdown(f"""
     <div class="info-message" style="background: linear-gradient(135deg, #2196F315 0%, #0D47A115 100%); border-radius: 8px; padding: 12px; border-left: 3px solid #2196F3; font-size: 0.9rem; margin: 10px 0;">
@@ -4098,6 +4103,14 @@ def step_retraction_analysis():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("📊 Generate Retraction Reports", type="primary", use_container_width=True):
+            # Group into cards here and save to session_state
+            with st.spinner("Grouping retraction data into cards..."):
+                cards = group_retraction_cards(
+                    st.session_state.retracted_articles, 
+                    st.session_state.retraction_notices, 
+                    st.session_state.selected_countries
+                )
+                st.session_state.retraction_cards = cards
             st.session_state.current_step = 3
             st.rerun()
 
