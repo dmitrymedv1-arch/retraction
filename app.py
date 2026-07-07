@@ -3482,7 +3482,7 @@ def step_retraction_search():
         
         # First, match retracted articles with their notices
         for article in retracted_articles:
-            article_doi = article.get('doi', '').replace('https://doi.org/', '')
+            article_doi = (article.get('doi') or '').replace('https://doi.org/', '')
             matching_notices = find_retraction_notices_for_article(article, retraction_notices)
             
             if matching_notices:
@@ -3493,7 +3493,7 @@ def step_retraction_search():
                 
                 # Mark notices as matched
                 for notice in matching_notices:
-                    notice_doi = notice.get('doi', '').replace('https://doi.org/', '')
+                    notice_doi = (notice.get('doi') or '').replace('https://doi.org/', '')
                     if notice_doi:
                         matched_article_dois.add(notice_doi)
             else:
