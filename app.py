@@ -3499,7 +3499,11 @@ def step_analysis():
     with st.spinner("Matching retraction notices with retracted articles..."):
         # First, try to match each retraction notice with a retracted article
         for notice in retraction_notices:
-            notice_title = notice.get('title', '')
+            # Проверка, что notice не None и является словарем
+            if notice is None or not isinstance(notice, dict):
+                continue
+            
+            notice_title = notice.get('title', '') if notice.get('title') else ''
             if not notice_title:
                 continue
             
@@ -3508,14 +3512,18 @@ def step_analysis():
                 combined = combine_retracted_with_notice(matched_article, notice)
                 enriched = enrich_combined_article(combined)
                 
-                # Check if article has authors from selected countries
-                if is_article_from_selected_countries(enriched, countries):
+                # Проверка, что enriched не пустой словарь
+                if enriched and is_article_from_selected_countries(enriched, countries):
                     combined_articles.append(enriched)
                     matched_notices.add(notice.get('doi', ''))
         
         # Add retracted articles that don't have a matching notice
         for article in retracted_articles:
-            article_doi = article.get('doi', '').replace('https://doi.org/', '')
+            # Проверка, что article не None и является словарем
+            if article is None or not isinstance(article, dict):
+                continue
+            
+            article_doi = article.get('doi', '').replace('https://doi.org/', '') if article.get('doi') else ''
             
             # Check if this article already has a notice matched
             already_matched = False
@@ -3530,13 +3538,14 @@ def step_analysis():
                     'notice': None,
                     'doi_retracted': article_doi,
                     'doi_notice': '',
-                    'title': article.get('title', 'No title'),
-                    'publication_year': article.get('publication_year', ''),
-                    'publication_date': article.get('publication_date', ''),
+                    'title': article.get('title', 'No title') if article.get('title') else 'No title',
+                    'publication_year': article.get('publication_year', '') if article.get('publication_year') else '',
+                    'publication_date': article.get('publication_date', '') if article.get('publication_date') else '',
                 }
                 enriched = enrich_combined_article(combined)
                 
-                if is_article_from_selected_countries(enriched, countries):
+                # Проверка, что enriched не пустой словарь
+                if enriched and is_article_from_selected_countries(enriched, countries):
                     combined_articles.append(enriched)
     
     st.session_state.combined_articles = combined_articles
