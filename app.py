@@ -1003,12 +1003,16 @@ def fetch_retracted_works_sync(years: List[int], countries: List[str] = None) ->
 def extract_all_authors_and_affiliations(work: dict) -> Tuple[List[dict], List[dict], List[str], List[str]]:
     """
     Extract all authors with their affiliations and countries.
+    Uses raw_author_name for Cyrillic names when available.
     Returns:
-    - authors_full: List of dict with author info {name, country}
+    - authors_full: List of dict with author info {name, countries}
     - affiliations_full: List of dict with affiliation info {name, country}
     - countries: List of unique country codes
     - authors_names: List of author names only
     """
+    import unicodedata
+    import re
+    
     authors_full = []
     affiliations_full = []
     countries_set = set()
@@ -1017,44 +1021,69 @@ def extract_all_authors_and_affiliations(work: dict) -> Tuple[List[dict], List[d
     authorships = work.get('authorships', [])
     
     for authorship in authorships:
-        if authorship:
-            # Extract author
-            author = authorship.get('author', {})
-            author_name = ''
-            if author:
-                author_name = author.get('display_name', '')
-                if author_name:
-                    import unicodedata
-                    author_name = unicodedata.normalize('NFC', str(author_name))
-                    author_name = re.sub(r'[^a-zA-Zа-яА-ЯёЁ\s\.\,\-\'\(\)]', '', author_name)
-                    author_name = re.sub(r'\s+', ' ', author_name).strip()
+        if not authorship:
+            continue
             
-            # Extract country for this author from institutions
-            author_countries = []
-            for inst in authorship.get('institutions', []):
-                if inst:
-                    country_code = inst.get('country_code', '')
-                    if country_code:
-                        author_countries.append(country_code)
-                        countries_set.add(country_code)
-                    
-                    inst_name = inst.get('display_name', '')
+        # Extract author - try raw_author_name first (preserves Cyrillic)
+        author = authorship.get('author', {})
+        author_name = ''
+        
+        # Priority 1: Use raw_author_name (preserves original Cyrillic)
+        raw_name = authorship.get('raw_author_name', '')
+        if raw_name:
+            raw_name = str(raw_name).strip()
+            # Normalize Unicode
+            raw_name = unicodedata.normalize('NFC', raw_name)
+            # Remove invalid characters but keep Cyrillic and Latin
+            raw_name = re.sub(r'[^a-zA-Zа-яА-ЯёЁ\s\.\,\-\'\(\)]', '', raw_name)
+            raw_name = re.sub(r'\s+', ' ', raw_name).strip()
+            if raw_name:
+                author_name = raw_name
+        
+        # Priority 2: Use display_name if raw_author_name is empty
+        if not author_name and author:
+            author_name = author.get('display_name', '')
+            if author_name:
+                author_name = str(author_name).strip()
+                author_name = unicodedata.normalize('NFC', author_name)
+                author_name = re.sub(r'[^a-zA-Zа-яА-ЯёЁ\s\.\,\-\'\(\)]', '', author_name)
+                author_name = re.sub(r'\s+', ' ', author_name).strip()
+        
+        # Skip if no author name
+        if not author_name:
+            continue
+        
+        # Extract countries for this author from institutions
+        author_countries = []
+        for inst in authorship.get('institutions', []):
+            if inst:
+                country_code = inst.get('country_code', '')
+                if country_code:
+                    author_countries.append(country_code)
+                    countries_set.add(country_code)
+                
+                inst_name = inst.get('display_name', '')
+                if inst_name:
+                    inst_name = inst_name.strip()
                     if inst_name:
-                        inst_name = inst_name.strip()
+                        # Normalize affiliation name
+                        inst_name = unicodedata.normalize('NFC', str(inst_name))
+                        inst_name = re.sub(r'[^a-zA-Zа-яА-ЯёЁ\s\.\,\-\'\(\)\d]', '', inst_name)
+                        inst_name = re.sub(r'\s+', ' ', inst_name).strip()
                         if inst_name:
                             affiliations_full.append({
                                 'name': inst_name,
                                 'country': country_code
                             })
-            
-            if author_name:
-                authors_full.append({
-                    'name': author_name,
-                    'countries': author_countries
-                })
-                authors_names.append(author_name)
+        
+        # Add author
+        authors_full.append({
+            'name': author_name,
+            'countries': author_countries
+        })
+        authors_names.append(author_name)
     
-    # Remove duplicate affiliations
+    # Remove duplicate affiliations (keep first occurrence)
     unique_affiliations = []
     seen_aff = set()
     for aff in affiliations_full:
@@ -1063,7 +1092,7 @@ def extract_all_authors_and_affiliations(work: dict) -> Tuple[List[dict], List[d
             seen_aff.add(key)
             unique_affiliations.append(aff)
     
-    # Remove duplicate authors
+    # Remove duplicate authors (keep first occurrence)
     unique_authors = []
     seen_auth = set()
     for auth in authors_full:
@@ -1133,6 +1162,7 @@ def enrich_retracted_work(work: dict) -> dict:
     """
     Enrich retracted article data with complete information.
     No truncation of authors or affiliations.
+    Uses raw_author_name for Cyrillic names when available.
     """
     if not work:
         return {}
@@ -1142,8 +1172,10 @@ def enrich_retracted_work(work: dict) -> dict:
     if doi_raw:
         doi_clean = str(doi_raw).replace('https://doi.org/', '')
     
-    # Extract ALL authors and affiliations (no truncation)
+    # Extract ALL authors and affiliations using the updated function
     authors_full, affiliations_full, all_countries, author_names = extract_all_authors_and_affiliations(work)
+    
+    # Build authors string with proper names
     authors_str = ', '.join([a['name'] for a in authors_full]) if authors_full else 'Authors not specified'
     
     # Format affiliations with country codes
