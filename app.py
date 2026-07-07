@@ -4132,9 +4132,14 @@ def step_retraction_results():
     years = st.session_state.selected_years
     countries = st.session_state.selected_countries
     
-    # Group into cards
-    cards = group_retraction_cards(retracted_articles, retraction_notices, countries)
-    st.session_state.retraction_cards = cards
+    # Get cards from session_state (already computed in step_retraction_analysis)
+    if 'retraction_cards' not in st.session_state:
+        # Fallback: compute if not available
+        with st.spinner("Grouping retraction data into cards..."):
+            cards = group_retraction_cards(retracted_articles, retraction_notices, countries)
+            st.session_state.retraction_cards = cards
+    else:
+        cards = st.session_state.retraction_cards
     
     # Statistics
     total_cards = len(cards)
