@@ -1503,7 +1503,7 @@ def combine_retracted_with_notice(retracted_article: dict, notice: dict) -> dict
         combined['notice_publisher'] = notice_source.get('publisher', '')
     
     # Notice biblio
-    notice_biblio = notice.get('biblio', {})
+    
     combined['notice_volume'] = notice_biblio.get('volume', '')
     combined['notice_issue'] = notice_biblio.get('issue', '')
     combined['notice_first_page'] = notice_biblio.get('first_page', '')
@@ -1847,9 +1847,9 @@ def enrich_combined_article(combined: dict) -> dict:
         pages = ''
     
     # Notice info
-    notice_biblio = notice.get('biblio', {})
-    notice_first_page = notice_biblio.get('first_page', '')
-    notice_last_page = notice_biblio.get('last_page', '')
+    notice_biblio = notice.get('biblio', {}) if notice else {}
+    notice_first_page = notice_biblio.get('first_page', '') if notice_biblio else ''
+    notice_last_page = notice_biblio.get('last_page', '') if notice_biblio else ''
     if notice_first_page and notice_last_page and notice_first_page != notice_last_page:
         notice_pages = f"{notice_first_page}-{notice_last_page}"
     elif notice_first_page:
@@ -1867,11 +1867,11 @@ def enrich_combined_article(combined: dict) -> dict:
         retracted_publisher = retracted_source.get('publisher', '')
     
     # Get journal info from notice
-    notice_primary_location = notice.get('primary_location', {})
+    notice_primary_location = notice.get('primary_location', {}) if notice else {}
     notice_source = notice_primary_location.get('source', {}) if notice_primary_location else {}
-    notice_journal = notice_source.get('display_name', '')
-    notice_publisher = notice_source.get('host_organization_name', '')
-    if not notice_publisher:
+    notice_journal = notice_source.get('display_name', '') if notice_source else 
+    notice_publisher = notice_source.get('host_organization_name', '') if notice_source else ''
+    if not notice_publisher and notice_source:
         notice_publisher = notice_source.get('publisher', '')
     
     enriched = {
