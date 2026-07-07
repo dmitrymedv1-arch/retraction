@@ -988,7 +988,7 @@ def extract_all_countries_from_work(work: dict) -> List[str]:
             # Get countries from institutions
             for inst in authorship.get('institutions', []):
                 if inst:
-                    country = inst.get('country_code', '')
+                    country = inst.get('country_code')
                     if country:
                         countries.add(country.upper())
             
@@ -1026,7 +1026,7 @@ def extract_all_authors_with_countries(work: dict, selected_countries: List[str]
         author_countries = set()
         for inst in authorship.get('institutions', []):
             if inst:
-                country = inst.get('country_code', '')
+                country = inst.get('country_code')
                 if country:
                     author_countries.add(country.upper())
         
@@ -1073,7 +1073,7 @@ def extract_authors_by_country(work: dict, selected_countries: List[str]) -> Lis
         has_selected_country = False
         for inst in authorship.get('institutions', []):
             if inst:
-                country = inst.get('country_code', '')
+                country = inst.get('country_code')
                 if country and country.upper() in [c.upper() for c in selected_countries]:
                     has_selected_country = True
                     break
@@ -1238,7 +1238,8 @@ def generate_retraction_pdf_by_country(cards: List[dict], selected_countries: Li
                 authorships = card['article'].get('authorships', [])
                 for authorship in authorships:
                     for inst in authorship.get('institutions', []):
-                        if inst and inst.get('country_code', '').upper() == country.upper():
+                        country_code = inst.get('country_code')
+                        if inst and country_code and country_code.upper() == country.upper():
                             aff_name = inst.get('display_name', 'Unknown Affiliation')
                             if aff_name:
                                 affiliations.add(aff_name)
@@ -1248,7 +1249,8 @@ def generate_retraction_pdf_by_country(cards: List[dict], selected_countries: Li
                 authorships = notice.get('authorships', [])
                 for authorship in authorships:
                     for inst in authorship.get('institutions', []):
-                        if inst and inst.get('country_code', '').upper() == country.upper():
+                        country_code = inst.get('country_code')
+                        if inst and country_code and country_code.upper() == country.upper():
                             aff_name = inst.get('display_name', 'Unknown Affiliation')
                             if aff_name:
                                 affiliations.add(aff_name)
