@@ -1402,63 +1402,255 @@ def group_articles_by_publisher_journal(articles: List[dict]) -> Dict[str, Dict[
 # ============================================================================
 
 def register_russian_font():
-    """Register a font that supports Cyrillic characters."""
+    """
+    Register a font that supports Cyrillic characters.
+    Tries multiple font paths and uses fallback options.
+    Returns font name and whether font was found.
+    """
     import os
+    import sys
     
     font_found = False
     russian_font_name = 'Helvetica'
     
+    # Expanded list of font paths for different operating systems
     font_paths = [
+        # Linux - DejaVu (most common for Cyrillic)
         '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf',
+        
+        # Linux - Liberation (Red Hat fonts)
         '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf',
         '/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf',
+        
+        # Linux - FreeFont
         '/usr/share/fonts/truetype/freefont/FreeSans.ttf',
+        '/usr/share/fonts/truetype/freefont/FreeSerif.ttf',
+        
+        # Linux - Ubuntu
         '/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf',
+        '/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf',
+        
+        # Linux - Noto (Google fonts, supports many scripts)
         '/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf',
         '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
+        '/usr/share/fonts/truetype/noto/NotoSansMono-Regular.ttf',
+        '/usr/share/fonts/truetype/noto/NotoSerif-Regular.ttf',
+        
+        # Linux - Arial (if installed)
+        '/usr/share/fonts/truetype/msttcorefonts/Arial.ttf',
+        '/usr/share/fonts/truetype/msttcorefonts/Arial_Bold.ttf',
+        
+        # Linux - Tahoma (Windows fonts)
+        '/usr/share/fonts/truetype/msttcorefonts/Tahoma.ttf',
+        
+        # Linux - Times New Roman
+        '/usr/share/fonts/truetype/msttcorefonts/Times_New_Roman.ttf',
+        
+        # Linux - system fonts
+        '/usr/share/fonts/truetype/ttf-dejavu/DejaVuSans.ttf',
+        '/usr/share/fonts/truetype/ttf-liberation/LiberationSans-Regular.ttf',
+        '/usr/share/fonts/liberation-sans/LiberationSans-Regular.ttf',
+        
+        # macOS - system fonts
         '/System/Library/Fonts/Helvetica.ttc',
         '/System/Library/Fonts/Arial.ttf',
+        '/System/Library/Fonts/HelveticaNeue.ttf',
+        '/System/Library/Fonts/AppleGothic.ttf',
         '/Library/Fonts/Arial.ttf',
+        '/Library/Fonts/Helvetica.ttf',
+        '/Library/Fonts/Microsoft/Arial.ttf',
+        '/Library/Fonts/Microsoft/Calibri.ttf',
+        
+        # Windows - system fonts
         'C:/Windows/Fonts/arial.ttf',
+        'C:/Windows/Fonts/arialbd.ttf',
+        'C:/Windows/Fonts/ariali.ttf',
+        'C:/Windows/Fonts/arialbi.ttf',
         'C:/Windows/Fonts/times.ttf',
+        'C:/Windows/Fonts/timesbd.ttf',
+        'C:/Windows/Fonts/timesi.ttf',
+        'C:/Windows/Fonts/timesbi.ttf',
+        'C:/Windows/Fonts/calibri.ttf',
+        'C:/Windows/Fonts/calibrib.ttf',
+        'C:/Windows/Fonts/calibrii.ttf',
+        'C:/Windows/Fonts/calibriz.ttf',
+        'C:/Windows/Fonts/consola.ttf',
+        'C:/Windows/Fonts/consolab.ttf',
+        'C:/Windows/Fonts/consolai.ttf',
+        'C:/Windows/Fonts/consolaz.ttf',
+        'C:/Windows/Fonts/cour.ttf',
+        'C:/Windows/Fonts/courbd.ttf',
+        'C:/Windows/Fonts/couri.ttf',
+        'C:/Windows/Fonts/courbi.ttf',
+        'C:/Windows/Fonts/georgia.ttf',
+        'C:/Windows/Fonts/georgiab.ttf',
+        'C:/Windows/Fonts/georgiai.ttf',
+        'C:/Windows/Fonts/georgiaz.ttf',
+        'C:/Windows/Fonts/impact.ttf',
+        'C:/Windows/Fonts/trebuc.ttf',
+        'C:/Windows/Fonts/trebucbd.ttf',
+        'C:/Windows/Fonts/trebucbi.ttf',
+        'C:/Windows/Fonts/trebucit.ttf',
+        'C:/Windows/Fonts/verdana.ttf',
+        'C:/Windows/Fonts/verdanab.ttf',
+        'C:/Windows/Fonts/verdanai.ttf',
+        'C:/Windows/Fonts/verdanaz.ttf',
+        
+        # Windows - additional fonts
+        'C:/Windows/Fonts/msyh.ttf',  # Microsoft YaHei (Chinese, but supports Cyrillic)
+        'C:/Windows/Fonts/msyhbd.ttf',
+        'C:/Windows/Fonts/msyhl.ttf',
+        
+        # Fallback: look in current directory for bundled fonts
+        os.path.join(os.path.dirname(__file__), 'fonts', 'DejaVuSans.ttf'),
+        os.path.join(os.path.dirname(__file__), 'fonts', 'LiberationSans-Regular.ttf'),
+        os.path.join(os.getcwd(), 'fonts', 'DejaVuSans.ttf'),
+        os.path.join(os.getcwd(), 'fonts', 'LiberationSans-Regular.ttf'),
+        
+        # Docker/container paths
+        '/app/fonts/DejaVuSans.ttf',
+        '/app/fonts/LiberationSans-Regular.ttf',
     ]
     
+    # First, try to register a font
     for font_path in font_paths:
         if os.path.exists(font_path):
             try:
                 pdfmetrics.registerFont(TTFont('RussianFont', font_path))
                 russian_font_name = 'RussianFont'
                 font_found = True
-                logger.info(f"Registered font from: {font_path}")
-                break
+                logger.info(f"Successfully registered Cyrillic font from: {font_path}")
+                return russian_font_name, True
             except Exception as e:
-                logger.warning(f"Failed to register {font_path}: {e}")
+                logger.warning(f"Failed to register font from {font_path}: {e}")
                 continue
     
+    # If no TTF font found, try to use system fonts with different names
     if not font_found:
-        logger.warning("No Cyrillic font found, text may not display correctly")
+        # Try to use built-in fonts that might support Cyrillic
+        try:
+            # On some systems, Helvetica with Cyrillic encoding might work
+            pdfmetrics.registerFont(TTFont('Helvetica', 'Helvetica'))
+            russian_font_name = 'Helvetica'
+            font_found = True
+            logger.info("Using Helvetica as fallback font")
+        except:
+            pass
+    
+    if not font_found:
+        # Last resort: try to use a font that might be available
+        try:
+            # Some systems have these fonts available
+            pdfmetrics.registerFont(TTFont('Courier', 'Courier'))
+            russian_font_name = 'Courier'
+            font_found = True
+            logger.info("Using Courier as fallback font")
+        except:
+            pass
+    
+    if not font_found:
+        logger.warning("No Cyrillic font found. Text may not display correctly.")
+        logger.warning("Please install a font like DejaVu Sans or Liberation Sans.")
+        logger.warning("On Ubuntu/Debian: apt-get install fonts-dejavu-core fonts-liberation")
+        logger.warning("On CentOS/RHEL: yum install dejavu-sans-fonts liberation-fonts")
         russian_font_name = 'Helvetica'
     
-    return russian_font_name
+    return russian_font_name, font_found
 
-def clean_text(text):
+def ensure_cyrillic_text(text):
     """
-    Clean text for PDF display, preserving allowed special characters including slash.
+    Ensure text contains proper Cyrillic characters.
+    If text has Unicode replacement characters or invalid characters, try to fix them.
     """
     if text is None:
         return ""
     if not text:
         return ""
+    
+    # Convert to string if needed
     if isinstance(text, bytes):
-        text = text.decode('utf-8', 'ignore')
+        try:
+            text = text.decode('utf-8', 'ignore')
+        except:
+            try:
+                text = text.decode('cp1251', 'ignore')
+            except:
+                text = text.decode('latin-1', 'ignore')
+    
+    # Normalize Unicode
     import unicodedata
     text = unicodedata.normalize('NFC', str(text))
+    
+    # Replace common problematic characters
+    replacements = {
+        '�': '',  # Unicode replacement character
+        '■': '',  # Black square (used for missing characters)
+        '□': '',  # White square
+        '▬': '',  # Black rectangle
+        '▮': '',  # Black vertical rectangle
+        '▯': '',  # White vertical rectangle
+        '▰': '',  # Black parallelogram
+        '▱': '',  # White parallelogram
+        '◼': '',  # Black medium square
+        '◻': '',  # White medium square
+        '◾': '',  # Black medium small square
+        '◽': '',  # White medium small square
+        '▪': '',  # Black small square
+        '▫': '',  # White small square
+    }
+    
+    for char, replacement in replacements.items():
+        text = text.replace(char, replacement)
+    
+    # Remove multiple spaces
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Remove invisible characters
+    text = ''.join(char for char in text if char.isprintable() or char in '\n\r\t')
+    
+    return text.strip()
+
+def clean_text(text, font_available=True):
+    """
+    Clean text for PDF display, preserving allowed special characters including slash.
+    Handles Cyrillic characters properly.
+    """
+    if text is None:
+        return ""
+    if not text:
+        return ""
+    
+    # First ensure proper Cyrillic handling
+    text = ensure_cyrillic_text(text)
+    
+    # Remove HTML tags
     text = re.sub(r'<[^>]+>', '', text)
-    text = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    
+    # Escape XML/HTML special characters for ReportLab
+    text = text.replace('&', '&amp;')
+    text = text.replace('<', '&lt;')
+    text = text.replace('>', '&gt;')
+    
+    # If font doesn't support Cyrillic, warn but keep text
+    if not font_available:
+        # Check if text contains Cyrillic characters
+        if any(ord(char) > 0x0400 and ord(char) < 0x0500 for char in text):
+            logger.debug(f"Text contains Cyrillic characters: {text[:50]}...")
+    
     # Allow: letters (Latin and Cyrillic), spaces, dots, commas, hyphens, apostrophes, parentheses, digits, and slash
+    # But don't strip Cyrillic characters
     allowed_pattern = r'[^a-zA-Zа-яА-ЯёЁ\s\.\,\-\'\(\)\d\/]'
     text = re.sub(allowed_pattern, '', text)
-    return text
+    
+    # Remove multiple spaces
+    text = re.sub(r'\s+', ' ', text)
+    
+    return text.strip()
 
 def clean_doi_url(url):
     if not url:
@@ -1507,7 +1699,8 @@ def generate_pdf_by_country_affiliation(journal_name: str, years: List[int], cou
                                        hierarchy: Dict, logo_path: str = None,
                                        report_title: str = "Report by Country & Affiliation") -> bytes:
     """Generate PDF report grouping articles by Country -> Affiliation."""
-    russian_font_name = register_russian_font()
+    # Register font and get availability
+    russian_font_name, font_available = register_russian_font()
     
     buffer = io.BytesIO()
     
@@ -1664,7 +1857,7 @@ def generate_pdf_by_country_affiliation(journal_name: str, years: List[int], cou
     add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
     
     story.append(Paragraph("Retracted Articles Report", title_style))
-    story.append(Paragraph(f"«{clean_text(journal_name)}»", subtitle_style))
+    story.append(Paragraph(f"«{clean_text(journal_name, font_available)}»", subtitle_style))
     story.append(Spacer(1, 1*cm))
     
     years_str = format_year_filter_for_filename(years)
@@ -1711,12 +1904,12 @@ def generate_pdf_by_country_affiliation(journal_name: str, years: List[int], cou
     for country, affiliations in hierarchy.items():
         country_articles = sum(len(articles) for articles in affiliations.values())
         anchor_id = f"country_{hashlib.md5(country.encode('utf-8')).hexdigest()[:8]}"
-        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(country)}</b> — {country_articles} retracted articles</a>', toc_country_style))
+        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(country, font_available)}</b> — {country_articles} retracted articles</a>', toc_country_style))
         
         for affiliation, articles in affiliations.items():
             aff_articles = len(articles)
             aff_anchor_id = f"affiliation_{hashlib.md5(f"{country}_{affiliation}".encode('utf-8')).hexdigest()[:8]}"
-            story.append(Paragraph(f'&nbsp;&nbsp;&nbsp;&nbsp;<a href="#{aff_anchor_id}">{clean_text(affiliation)}</a> — {aff_articles} retracted articles', toc_affiliation_style))
+            story.append(Paragraph(f'&nbsp;&nbsp;&nbsp;&nbsp;<a href="#{aff_anchor_id}">{clean_text(affiliation, font_available)}</a> — {aff_articles} retracted articles', toc_affiliation_style))
         
         story.append(Spacer(1, 0.3*cm))
     
@@ -1728,7 +1921,7 @@ def generate_pdf_by_country_affiliation(journal_name: str, years: List[int], cou
         anchor_para = Paragraph(f'<a name="{anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
         story.append(anchor_para)
         
-        story.append(Paragraph(f"{clean_text(country)} — {country_articles} retracted articles", country_style))
+        story.append(Paragraph(f"{clean_text(country, font_available)} — {country_articles} retracted articles", country_style))
         story.append(Spacer(1, 0.3*cm))
         
         for affiliation, articles in affiliations.items():
@@ -1736,19 +1929,19 @@ def generate_pdf_by_country_affiliation(journal_name: str, years: List[int], cou
             aff_anchor_para = Paragraph(f'<a name="{aff_anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
             story.append(aff_anchor_para)
             
-            story.append(Paragraph(f"&nbsp;&nbsp;{clean_text(affiliation)} — {len(articles)} retracted articles", affiliation_style))
+            story.append(Paragraph(f"&nbsp;&nbsp;{clean_text(affiliation, font_available)} — {len(articles)} retracted articles", affiliation_style))
             story.append(Spacer(1, 0.2*cm))
             
             for idx, article in enumerate(articles, 1):
-                title = clean_text(article.get('title', 'No title'))
+                title = clean_text(article.get('title', 'No title'), font_available)
                 story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{idx}. {title}", article_title_style))
                 
-                authors = clean_text(article.get('authors_str', 'Authors not specified'))
+                authors = clean_text(article.get('authors_str', 'Authors not specified'), font_available)
                 story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
                 
                 # Journal and publisher info
-                journal = clean_text(article.get('journal_name', ''))
-                publisher = clean_text(article.get('publisher', ''))
+                journal = clean_text(article.get('journal_name', ''), font_available)
+                publisher = clean_text(article.get('publisher', ''), font_available)
                 
                 if journal:
                     story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Journal:</b> {journal}", meta_style))
@@ -1823,7 +2016,8 @@ def generate_pdf_by_authors(journal_name: str, years: List[int], countries: List
                            author_articles: Dict[str, List[dict]], logo_path: str = None,
                            report_title: str = "Report by Author") -> bytes:
     """Generate PDF report grouping articles by author."""
-    russian_font_name = register_russian_font()
+    # Register font and get availability
+    russian_font_name, font_available = register_russian_font()
     
     buffer = io.BytesIO()
     
@@ -1957,7 +2151,7 @@ def generate_pdf_by_authors(journal_name: str, years: List[int], countries: List
     add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
     
     story.append(Paragraph("Retracted Articles Report by Author", title_style))
-    story.append(Paragraph(f"«{clean_text(journal_name)}»", subtitle_style))
+    story.append(Paragraph(f"«{clean_text(journal_name, font_available)}»", subtitle_style))
     story.append(Spacer(1, 1*cm))
     
     years_str = format_year_filter_for_filename(years)
@@ -2004,7 +2198,7 @@ def generate_pdf_by_authors(journal_name: str, years: List[int], countries: List
     for author, articles in author_articles.items():
         article_count = len(articles)
         anchor_id = f"author_{hashlib.md5(author.encode('utf-8')).hexdigest()[:8]}"
-        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(author)}</b> — {article_count} retracted articles</a>', toc_author_style))
+        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(author, font_available)}</b> — {article_count} retracted articles</a>', toc_author_style))
     
     story.append(PageBreak())
     
@@ -2013,19 +2207,19 @@ def generate_pdf_by_authors(journal_name: str, years: List[int], countries: List
         anchor_para = Paragraph(f'<a name="{anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
         story.append(anchor_para)
         
-        story.append(Paragraph(f"{clean_text(author)} — {len(articles)} retracted articles", author_style))
+        story.append(Paragraph(f"{clean_text(author, font_available)} — {len(articles)} retracted articles", author_style))
         story.append(Spacer(1, 0.3*cm))
         
         for idx, article in enumerate(articles, 1):
-            title = clean_text(article.get('title', 'No title'))
+            title = clean_text(article.get('title', 'No title'), font_available)
             story.append(Paragraph(f"&nbsp;&nbsp;{idx}. {title}", article_title_style))
             
-            authors = clean_text(article.get('authors_str', 'Authors not specified'))
+            authors = clean_text(article.get('authors_str', 'Authors not specified'), font_available)
             story.append(Paragraph(f"&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
             
             # Journal and publisher info
-            journal = clean_text(article.get('journal_name', ''))
-            publisher = clean_text(article.get('publisher', ''))
+            journal = clean_text(article.get('journal_name', ''), font_available)
+            publisher = clean_text(article.get('publisher', ''), font_available)
             
             if journal:
                 story.append(Paragraph(f"&nbsp;&nbsp;<b>Journal:</b> {journal}", meta_style))
@@ -2092,12 +2286,13 @@ def generate_pdf_by_authors(journal_name: str, years: List[int], countries: List
     
     doc.build(story)
     return buffer.getvalue()
-
+                               
 def generate_pdf_by_publisher_journal(journal_name: str, years: List[int], countries: List[str],
                                      hierarchy: Dict, logo_path: str = None,
                                      report_title: str = "Report by Publisher & Journal") -> bytes:
     """Generate PDF report grouping articles by Publisher -> Journal."""
-    russian_font_name = register_russian_font()
+    # Register font and get availability
+    russian_font_name, font_available = register_russian_font()
     
     buffer = io.BytesIO()
     
@@ -2254,7 +2449,7 @@ def generate_pdf_by_publisher_journal(journal_name: str, years: List[int], count
     add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
     
     story.append(Paragraph("Retracted Articles Report by Publisher & Journal", title_style))
-    story.append(Paragraph(f"«{clean_text(journal_name)}»", subtitle_style))
+    story.append(Paragraph(f"«{clean_text(journal_name, font_available)}»", subtitle_style))
     story.append(Spacer(1, 1*cm))
     
     years_str = format_year_filter_for_filename(years)
@@ -2299,12 +2494,12 @@ def generate_pdf_by_publisher_journal(journal_name: str, years: List[int], count
     for publisher, journals in hierarchy.items():
         publisher_articles = sum(len(articles) for articles in journals.values())
         anchor_id = f"publisher_{hashlib.md5(publisher.encode('utf-8')).hexdigest()[:8]}"
-        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(publisher)}</b> — {publisher_articles} retracted articles</a>', toc_publisher_style))
+        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(publisher, font_available)}</b> — {publisher_articles} retracted articles</a>', toc_publisher_style))
         
         for journal, articles in journals.items():
             journal_articles = len(articles)
             journal_anchor_id = f"journal_{hashlib.md5(f"{publisher}_{journal}".encode('utf-8')).hexdigest()[:8]}"
-            story.append(Paragraph(f'&nbsp;&nbsp;&nbsp;&nbsp;<a href="#{journal_anchor_id}">{clean_text(journal)}</a> — {journal_articles} retracted articles', toc_journal_style))
+            story.append(Paragraph(f'&nbsp;&nbsp;&nbsp;&nbsp;<a href="#{journal_anchor_id}">{clean_text(journal, font_available)}</a> — {journal_articles} retracted articles', toc_journal_style))
         
         story.append(Spacer(1, 0.3*cm))
     
@@ -2316,7 +2511,7 @@ def generate_pdf_by_publisher_journal(journal_name: str, years: List[int], count
         anchor_para = Paragraph(f'<a name="{anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
         story.append(anchor_para)
         
-        story.append(Paragraph(f"{clean_text(publisher)} — {publisher_articles} retracted articles", publisher_style))
+        story.append(Paragraph(f"{clean_text(publisher, font_available)} — {publisher_articles} retracted articles", publisher_style))
         story.append(Spacer(1, 0.3*cm))
         
         for journal, articles in journals.items():
@@ -2324,14 +2519,14 @@ def generate_pdf_by_publisher_journal(journal_name: str, years: List[int], count
             journal_anchor_para = Paragraph(f'<a name="{journal_anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
             story.append(journal_anchor_para)
             
-            story.append(Paragraph(f"&nbsp;&nbsp;{clean_text(journal)} — {len(articles)} retracted articles", journal_style))
+            story.append(Paragraph(f"&nbsp;&nbsp;{clean_text(journal, font_available)} — {len(articles)} retracted articles", journal_style))
             story.append(Spacer(1, 0.2*cm))
             
             for idx, article in enumerate(articles, 1):
-                title = clean_text(article.get('title', 'No title'))
+                title = clean_text(article.get('title', 'No title'), font_available)
                 story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{idx}. {title}", article_title_style))
                 
-                authors = clean_text(article.get('authors_str', 'Authors not specified'))
+                authors = clean_text(article.get('authors_str', 'Authors not specified'), font_available)
                 story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
                 
                 # Publication details
