@@ -848,16 +848,20 @@ class OpenAlexAsyncClient:
     async def fetch_retraction_notices(self, years: List[int], 
                                        progress_callback=None) -> List[dict]:
         """
-        Fetch retraction notices (erratum type with Retraction in title).
+        Fetch retraction notices using title search for "Retraction" or "Retracted".
         """
         all_works = []
         cursor = "*"
         page_count = 0
         total_count = 0
         
-        # Build filter string: type erratum + years
+        # Build filter string: years only, no type filter
         years_str = "|".join(map(str, years))
-        filter_str = f"type:erratum,publication_year:{years_str}"
+        
+        # Используем поиск по заголовку для retraction notices
+        # OpenAlex поддерживает поиск по title.search
+        filter_str = f"publication_year:{years_str}"
+        search_query = "title.search:Retraction OR title.search:Retracted"
         
         logger.info(f"Fetching retraction notices for years {years}")
         
@@ -867,6 +871,7 @@ class OpenAlexAsyncClient:
                 
                 params = {
                     "filter": filter_str,
+                    "search": search_query,
                     "per-page": CURSOR_PAGE_SIZE,
                     "cursor": cursor,
                     "mailto": MAILTO
@@ -892,7 +897,7 @@ class OpenAlexAsyncClient:
                 if not works:
                     break
                 
-                # Filter for Retraction/Retracted in title or display_name
+                # Additional filter for Retraction/Retracted in title (already filtered by search)
                 filtered_works = []
                 for work in works:
                     title = work.get('title', '')
@@ -904,6 +909,7 @@ class OpenAlexAsyncClient:
                 all_works.extend(filtered_works)
                 
                 if progress_callback and total_count > 0:
+                    # Используем количество полученных работ для прогресса
                     progress = min(len(all_works) / total_count, 1.0)
                     progress_callback(progress, len(all_works), page_count, total_count)
                 
@@ -914,7 +920,7 @@ class OpenAlexAsyncClient:
                     break
                 
                 cursor = next_cursor
-                time.sleep(0.1)
+                time.sleep(0.2)
             
             logger.info(f"Finished fetching retraction notices. Total: {len(all_works)}")
             return all_works
@@ -926,7 +932,7 @@ class OpenAlexAsyncClient:
     async def fetch_retracted_articles(self, years: List[int],
                                        progress_callback=None) -> List[dict]:
         """
-        Fetch retracted articles (is_retracted: true).
+        Fetch retracted articles using is_retracted:true filter.
         """
         all_works = []
         cursor = "*"
@@ -973,7 +979,8 @@ class OpenAlexAsyncClient:
                 all_works.extend(works)
                 
                 if progress_callback and total_count > 0:
-                    progress = min(len(all_works) / total_count, 1.0)
+                    # Корректный прогресс: сколько уже получено / сколько всего
+                    progress = len(all_works) / total_count if total_count > 0 else 0
                     progress_callback(progress, len(all_works), page_count, total_count)
                 
                 logger.info(f"Page {page_count}: got {len(works)} retracted articles, total: {len(all_works)}/{total_count}")
