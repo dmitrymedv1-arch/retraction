@@ -1203,7 +1203,7 @@ def generate_retraction_pdf_by_country(cards: List[dict], selected_countries: Li
     Generate PDF report grouping retraction cards by Country -> Affiliation.
     Only shows countries from selected_countries.
     """
-    russian_font_name = register_russian_font()
+    russian_font_name = get_pdf_font_name()
     
     # Build hierarchy: country -> affiliation -> cards
     hierarchy = defaultdict(lambda: defaultdict(list))
@@ -1668,7 +1668,7 @@ def generate_retraction_pdf_by_author(cards: List[dict], selected_countries: Lis
     Generate PDF report grouping retraction cards by Author.
     Only shows authors from selected countries.
     """
-    russian_font_name = register_russian_font()
+    russian_font_name = get_pdf_font_name()
     
     # Build hierarchy: author -> cards
     hierarchy = defaultdict(list)
@@ -2044,7 +2044,7 @@ def generate_retraction_pdf_by_publisher_journal(cards: List[dict], selected_cou
     """
     Generate PDF report grouping retraction cards by Publisher -> Journal.
     """
-    russian_font_name = register_russian_font()
+    russian_font_name = get_pdf_font_name()
     
     # Build hierarchy: publisher -> journal -> cards
     hierarchy = defaultdict(lambda: defaultdict(list))
@@ -2444,7 +2444,10 @@ def generate_retraction_pdf_by_publisher_journal(cards: List[dict], selected_cou
 # ============================================================================
 
 def register_russian_font():
-    """Register a font that supports Cyrillic characters."""
+    """
+    Register a font that supports Cyrillic characters.
+    Returns font name.
+    """
     import os
     
     font_found = False
@@ -2463,6 +2466,9 @@ def register_russian_font():
         '/Library/Fonts/Arial.ttf',
         'C:/Windows/Fonts/arial.ttf',
         'C:/Windows/Fonts/times.ttf',
+        'C:/Windows/Fonts/calibri.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
     ]
     
     for font_path in font_paths:
@@ -2482,6 +2488,73 @@ def register_russian_font():
         russian_font_name = 'Helvetica'
     
     return russian_font_name
+
+def get_pdf_font_name() -> str:
+    """
+    Get a font name that supports both Latin and Cyrillic characters.
+    Returns font name that can be used in ParagraphStyle.
+    """
+    # Try to register a Unicode font first
+    import os
+    
+    # List of possible Unicode fonts on different systems
+    font_paths = [
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf',
+        '/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf',
+        '/usr/share/fonts/truetype/freefont/FreeSans.ttf',
+        '/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf',
+        '/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf',
+        '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
+        '/System/Library/Fonts/Helvetica.ttc',
+        '/System/Library/Fonts/Arial.ttf',
+        '/Library/Fonts/Arial.ttf',
+        'C:/Windows/Fonts/arial.ttf',
+        'C:/Windows/Fonts/times.ttf',
+        'C:/Windows/Fonts/calibri.ttf',
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+    ]
+    
+    # Try to register a font that supports Unicode
+    for font_path in font_paths:
+        if os.path.exists(font_path):
+            try:
+                pdfmetrics.registerFont(TTFont('UnicodeFont', font_path))
+                logger.info(f"Registered Unicode font from: {font_path}")
+                return 'UnicodeFont'
+            except Exception as e:
+                logger.warning(f"Failed to register {font_path}: {e}")
+                continue
+    
+    # Try to use the Russian font if available
+    russian_font = register_russian_font()
+    if russian_font != 'Helvetica':
+        return russian_font
+    
+    # Fallback: try to use a built-in font that might work
+    try:
+        # Try to register a font from the system
+        import platform
+        system = platform.system()
+        
+        if system == 'Windows':
+            fallback_paths = ['C:/Windows/Fonts/arial.ttf', 'C:/Windows/Fonts/times.ttf']
+        elif system == 'Darwin':  # macOS
+            fallback_paths = ['/System/Library/Fonts/Arial.ttf', '/System/Library/Fonts/Helvetica.ttc']
+        else:  # Linux
+            fallback_paths = ['/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', '/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf']
+        
+        for font_path in fallback_paths:
+            if os.path.exists(font_path):
+                pdfmetrics.registerFont(TTFont('FallbackFont', font_path))
+                return 'FallbackFont'
+    except Exception as e:
+        logger.warning(f"Failed to register fallback font: {e}")
+    
+    # Final fallback - Helvetica (will not show Cyrillic properly)
+    logger.warning("No Unicode font found, using Helvetica (Cyrillic may not display correctly)")
+    return 'Helvetica'
 
 def clean_text(text):
     """
