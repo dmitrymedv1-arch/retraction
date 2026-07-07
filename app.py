@@ -1860,19 +1860,20 @@ def enrich_combined_article(combined: dict) -> dict:
         notice_pages = ''
     
     # Get journal info from retracted article    retracted_primary_location = retracted.get('primary_location', {})
+    retracted_primary_location = retracted.get('primary_location', {}) if retracted else {}
     retracted_source = retracted_primary_location.get('source', {}) if retracted_primary_location else {}
-    retracted_journal = retracted_source.get('display_name', '')
-    retracted_publisher = retracted_source.get('host_organization_name', '')
+    retracted_journal = retracted_source.get('display_name', '') if retracted_source else ''
+    retracted_publisher = retracted_source.get('host_organization_name', '') if retracted_source else ''
     if not retracted_publisher:
-        retracted_publisher = retracted_source.get('publisher', '')
+        retracted_publisher = retracted_source.get('publisher', '') if retracted_source else ''
     
     # Get journal info from notice
     notice_primary_location = notice.get('primary_location', {}) if notice else {}
     notice_source = notice_primary_location.get('source', {}) if notice_primary_location else {}
-    notice_journal = notice_source.get('display_name', '') if notice_source else '' 
+    notice_journal = notice_source.get('display_name', '') if notice_source else ''
     notice_publisher = notice_source.get('host_organization_name', '') if notice_source else ''
     if not notice_publisher and notice_source:
-        notice_publisher = notice_source.get('publisher', '')
+        notice_publisher = notice_source.get('publisher', '') if notice_source else ''
     
     enriched = {
         'doi_retracted': combined.get('doi_retracted', ''),
