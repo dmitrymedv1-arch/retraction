@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 # App settings
 st.set_page_config(
-    page_title="Retraction Article Detector Pro",
+    page_title="CTA Retraction Article Detector Pro*2",
     page_icon="logo.jpg",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -364,7 +364,7 @@ st.markdown("""
 
 OPENALEX_BASE_URL = "https://api.openalex.org"
 MAILTO = "your-email@example.com"
-POLITE_POOL_HEADER = {'User-Agent': f'Retraction-App (mailto:{MAILTO})'}
+POLITE_POOL_HEADER = {'User-Agent': f'CTA-App (mailto:{MAILTO})'}
 
 RATE_LIMIT_PER_SECOND = 8
 BATCH_SIZE = 50
@@ -375,57 +375,10 @@ INITIAL_DELAY = 1
 MAX_DELAY = 60
 
 CACHE_DIR = Path("./cache")
-CACHE_DB = CACHE_DIR / "retraction_cache.db"
+CACHE_DB = CACHE_DIR / "openalex_cache.db"
 CACHE_EXPIRY_DAYS = 30
 
 CACHE_DIR.mkdir(exist_ok=True)
-
-# ============================================================================
-# COUNTRY CODE MAPPING
-# ============================================================================
-
-COUNTRY_CODE_MAP = {
-    'AF': 'Afghanistan', 'AL': 'Albania', 'DZ': 'Algeria', 'AD': 'Andorra', 'AO': 'Angola',
-    'AG': 'Antigua and Barbuda', 'AR': 'Argentina', 'AM': 'Armenia', 'AU': 'Australia',
-    'AT': 'Austria', 'AZ': 'Azerbaijan', 'BS': 'Bahamas', 'BH': 'Bahrain', 'BD': 'Bangladesh',
-    'BB': 'Barbados', 'BY': 'Belarus', 'BE': 'Belgium', 'BZ': 'Belize', 'BJ': 'Benin',
-    'BT': 'Bhutan', 'BO': 'Bolivia', 'BA': 'Bosnia and Herzegovina', 'BW': 'Botswana',
-    'BR': 'Brazil', 'BN': 'Brunei', 'BG': 'Bulgaria', 'BF': 'Burkina Faso', 'BI': 'Burundi',
-    'CV': 'Cabo Verde', 'KH': 'Cambodia', 'CM': 'Cameroon', 'CA': 'Canada', 'CF': 'Central African Republic',
-    'TD': 'Chad', 'CL': 'Chile', 'CN': 'China', 'CO': 'Colombia', 'KM': 'Comoros',
-    'CG': 'Congo', 'CR': 'Costa Rica', 'HR': 'Croatia', 'CU': 'Cuba', 'CY': 'Cyprus',
-    'CZ': 'Czech Republic', 'DK': 'Denmark', 'DJ': 'Djibouti', 'DM': 'Dominica', 'DO': 'Dominican Republic',
-    'EC': 'Ecuador', 'EG': 'Egypt', 'SV': 'El Salvador', 'GQ': 'Equatorial Guinea', 'ER': 'Eritrea',
-    'EE': 'Estonia', 'SZ': 'Eswatini', 'ET': 'Ethiopia', 'FJ': 'Fiji', 'FI': 'Finland',
-    'FR': 'France', 'GA': 'Gabon', 'GM': 'Gambia', 'GE': 'Georgia', 'DE': 'Germany',
-    'GH': 'Ghana', 'GR': 'Greece', 'GD': 'Grenada', 'GT': 'Guatemala', 'GN': 'Guinea',
-    'GW': 'Guinea-Bissau', 'GY': 'Guyana', 'HT': 'Haiti', 'HN': 'Honduras', 'HU': 'Hungary',
-    'IS': 'Iceland', 'IN': 'India', 'ID': 'Indonesia', 'IR': 'Iran', 'IQ': 'Iraq',
-    'IE': 'Ireland', 'IL': 'Israel', 'IT': 'Italy', 'JM': 'Jamaica', 'JP': 'Japan',
-    'JO': 'Jordan', 'KZ': 'Kazakhstan', 'KE': 'Kenya', 'KI': 'Kiribati', 'KP': 'North Korea',
-    'KR': 'South Korea', 'KW': 'Kuwait', 'KG': 'Kyrgyzstan', 'LA': 'Laos', 'LV': 'Latvia',
-    'LB': 'Lebanon', 'LS': 'Lesotho', 'LR': 'Liberia', 'LY': 'Libya', 'LI': 'Liechtenstein',
-    'LT': 'Lithuania', 'LU': 'Luxembourg', 'MG': 'Madagascar', 'MW': 'Malawi', 'MY': 'Malaysia',
-    'MV': 'Maldives', 'ML': 'Mali', 'MT': 'Malta', 'MH': 'Marshall Islands', 'MR': 'Mauritania',
-    'MU': 'Mauritius', 'MX': 'Mexico', 'FM': 'Micronesia', 'MD': 'Moldova', 'MC': 'Monaco',
-    'MN': 'Mongolia', 'ME': 'Montenegro', 'MA': 'Morocco', 'MZ': 'Mozambique', 'MM': 'Myanmar',
-    'NA': 'Namibia', 'NR': 'Nauru', 'NP': 'Nepal', 'NL': 'Netherlands', 'NZ': 'New Zealand',
-    'NI': 'Nicaragua', 'NE': 'Niger', 'NG': 'Nigeria', 'MK': 'North Macedonia', 'NO': 'Norway',
-    'OM': 'Oman', 'PK': 'Pakistan', 'PW': 'Palau', 'PA': 'Panama', 'PG': 'Papua New Guinea',
-    'PY': 'Paraguay', 'PE': 'Peru', 'PH': 'Philippines', 'PL': 'Poland', 'PT': 'Portugal',
-    'QA': 'Qatar', 'RO': 'Romania', 'RU': 'Russia', 'RW': 'Rwanda', 'KN': 'Saint Kitts and Nevis',
-    'LC': 'Saint Lucia', 'VC': 'Saint Vincent and the Grenadines', 'WS': 'Samoa', 'SM': 'San Marino',
-    'ST': 'Sao Tome and Principe', 'SA': 'Saudi Arabia', 'SN': 'Senegal', 'RS': 'Serbia',
-    'SC': 'Seychelles', 'SL': 'Sierra Leone', 'SG': 'Singapore', 'SK': 'Slovakia', 'SI': 'Slovenia',
-    'SB': 'Solomon Islands', 'SO': 'Somalia', 'ZA': 'South Africa', 'SS': 'South Sudan',
-    'ES': 'Spain', 'LK': 'Sri Lanka', 'SD': 'Sudan', 'SR': 'Suriname', 'SE': 'Sweden',
-    'CH': 'Switzerland', 'SY': 'Syria', 'TW': 'Taiwan', 'TJ': 'Tajikistan', 'TZ': 'Tanzania',
-    'TH': 'Thailand', 'TL': 'Timor-Leste', 'TG': 'Togo', 'TO': 'Tonga', 'TT': 'Trinidad and Tobago',
-    'TN': 'Tunisia', 'TR': 'Turkey', 'TM': 'Turkmenistan', 'TV': 'Tuvalu', 'UG': 'Uganda',
-    'UA': 'Ukraine', 'AE': 'United Arab Emirates', 'GB': 'United Kingdom', 'US': 'United States',
-    'UY': 'Uruguay', 'UZ': 'Uzbekistan', 'VU': 'Vanuatu', 'VA': 'Vatican City', 'VE': 'Venezuela',
-    'VN': 'Vietnam', 'YE': 'Yemen', 'ZM': 'Zambia', 'ZW': 'Zimbabwe'
-}
 
 # ============================================================================
 # SQLITE CACHING
@@ -445,26 +398,19 @@ def init_cache_db():
     ''')
     
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS retraction_notices_cache (
-            id TEXT PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS topic_works_cache (
+            topic_id TEXT,
+            cursor_key TEXT,
             data TEXT NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            expires_at DATETIME
+            expires_at DATETIME,
+            PRIMARY KEY (topic_id, cursor_key)
         )
     ''')
     
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS retracted_articles_cache (
-            id TEXT PRIMARY KEY,
-            data TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            expires_at DATETIME
-        )
-    ''')
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS search_cache (
-            search_key TEXT PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS topics_cache (
+            topic_id TEXT PRIMARY KEY,
             data TEXT NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             expires_at DATETIME
@@ -472,9 +418,8 @@ def init_cache_db():
     ''')
     
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_works_expires ON works_cache(expires_at)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_notices_expires ON retraction_notices_cache(expires_at)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_articles_expires ON retracted_articles_cache(expires_at)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_search_expires ON search_cache(expires_at)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_topic_works_expires ON topic_works_cache(expires_at)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_topics_expires ON topics_cache(expires_at)')
     
     conn.commit()
     conn.close()
@@ -507,72 +452,49 @@ def get_cached_work(doi: str) -> Optional[dict]:
         return json.loads(result[0])
     return None
 
-def cache_retraction_notice(notice_id: str, data: dict):
-    conn = get_cache_connection()
-    cursor = conn.cursor()
-    expires_at = datetime.now() + timedelta(days=CACHE_EXPIRY_DAYS)
-    cursor.execute('''
-        INSERT OR REPLACE INTO retraction_notices_cache (id, data, expires_at)
-        VALUES (?, ?, ?)
-    ''', (notice_id, json.dumps(data), expires_at))
-    conn.commit()
-    conn.close()
-
-def get_cached_retraction_notice(notice_id: str) -> Optional[dict]:
-    conn = get_cache_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT data FROM retraction_notices_cache 
-        WHERE id = ? AND (expires_at IS NULL OR expires_at > ?)
-    ''', (notice_id, datetime.now()))
-    result = cursor.fetchone()
-    conn.close()
-    if result:
-        return json.loads(result[0])
-    return None
-
-def cache_retracted_article(article_id: str, data: dict):
-    conn = get_cache_connection()
-    cursor = conn.cursor()
-    expires_at = datetime.now() + timedelta(days=CACHE_EXPIRY_DAYS)
-    cursor.execute('''
-        INSERT OR REPLACE INTO retracted_articles_cache (id, data, expires_at)
-        VALUES (?, ?, ?)
-    ''', (article_id, json.dumps(data), expires_at))
-    conn.commit()
-    conn.close()
-
-def get_cached_retracted_article(article_id: str) -> Optional[dict]:
-    conn = get_cache_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT data FROM retracted_articles_cache 
-        WHERE id = ? AND (expires_at IS NULL OR expires_at > ?)
-    ''', (article_id, datetime.now()))
-    result = cursor.fetchone()
-    conn.close()
-    if result:
-        return json.loads(result[0])
-    return None
-
-def cache_search_result(search_key: str, data: dict):
+def cache_topic_works(topic_id: str, cursor_key: str, data: dict):
     conn = get_cache_connection()
     cursor = conn.cursor()
     expires_at = datetime.now() + timedelta(days=7)
     cursor.execute('''
-        INSERT OR REPLACE INTO search_cache (search_key, data, expires_at)
-        VALUES (?, ?, ?)
-    ''', (search_key, json.dumps(data), expires_at))
+        INSERT OR REPLACE INTO topic_works_cache (topic_id, cursor_key, data, expires_at)
+        VALUES (?, ?, ?, ?)
+    ''', (topic_id, cursor_key, json.dumps(data), expires_at))
     conn.commit()
     conn.close()
 
-def get_cached_search_result(search_key: str) -> Optional[dict]:
+def get_cached_topic_works(topic_id: str, cursor_key: str) -> Optional[dict]:
     conn = get_cache_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT data FROM search_cache 
-        WHERE search_key = ? AND (expires_at IS NULL OR expires_at > ?)
-    ''', (search_key, datetime.now()))
+        SELECT data FROM topic_works_cache 
+        WHERE topic_id = ? AND cursor_key = ? 
+        AND (expires_at IS NULL OR expires_at > ?)
+    ''', (topic_id, cursor_key, datetime.now()))
+    result = cursor.fetchone()
+    conn.close()
+    if result:
+        return json.loads(result[0])
+    return None
+
+def cache_topic_stats(topic_id: str, data: dict):
+    conn = get_cache_connection()
+    cursor = conn.cursor()
+    expires_at = datetime.now() + timedelta(days=30)
+    cursor.execute('''
+        INSERT OR REPLACE INTO topics_cache (topic_id, data, expires_at)
+        VALUES (?, ?, ?)
+    ''', (topic_id, json.dumps(data), expires_at))
+    conn.commit()
+    conn.close()
+
+def get_cached_topic_stats(topic_id: str) -> Optional[dict]:
+    conn = get_cache_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT data FROM topics_cache 
+        WHERE topic_id = ? AND (expires_at IS NULL OR expires_at > ?)
+    ''', (topic_id, datetime.now()))
     result = cursor.fetchone()
     conn.close()
     if result:
@@ -584,9 +506,8 @@ def clear_old_cache():
     cursor = conn.cursor()
     now = datetime.now()
     cursor.execute('DELETE FROM works_cache WHERE expires_at IS NOT NULL AND expires_at <= ?', (now,))
-    cursor.execute('DELETE FROM retraction_notices_cache WHERE expires_at IS NOT NULL AND expires_at <= ?', (now,))
-    cursor.execute('DELETE FROM retracted_articles_cache WHERE expires_at IS NOT NULL AND expires_at <= ?', (now,))
-    cursor.execute('DELETE FROM search_cache WHERE expires_at IS NOT NULL AND expires_at <= ?', (now,))
+    cursor.execute('DELETE FROM topic_works_cache WHERE expires_at IS NOT NULL AND expires_at <= ?', (now,))
+    cursor.execute('DELETE FROM topics_cache WHERE expires_at IS NOT NULL AND expires_at <= ?', (now,))
     changes = cursor.rowcount
     if changes > 0:
         conn.commit()
@@ -594,7 +515,7 @@ def clear_old_cache():
     conn.close()
 
 # ============================================================================
-# YEAR PARSING FUNCTIONS (UNCHANGED)
+# YEAR PARSING FUNCTIONS
 # ============================================================================
 
 def parse_year_filter(year_input: str) -> List[int]:
@@ -706,6 +627,262 @@ def calculate_toc_indices(total_count: int) -> List[int]:
             indices.append(i)
     
     return sorted(indices)
+
+# ============================================================================
+# COUNTRY PARSING FUNCTIONS
+# ============================================================================
+
+def parse_country_filter(country_input: str) -> List[str]:
+    """
+    Parse country filter string.
+    Examples:
+    "RU" -> ["RU"]
+    "RU+IT" -> ["RU", "IT"]
+    "RU+IT+CN" -> ["RU", "IT", "CN"]
+    "ru+it" -> ["RU", "IT"]
+    """
+    if not country_input or country_input.strip() == "":
+        return []
+    
+    # Remove spaces and split by '+'
+    country_input = country_input.strip().upper()
+    countries = [c.strip() for c in country_input.split('+') if c.strip()]
+    
+    # Validate country codes (2-letter ISO codes)
+    valid_countries = []
+    for country in countries:
+        if len(country) == 2 and country.isalpha():
+            valid_countries.append(country)
+        else:
+            logger.warning(f"Invalid country code: {country}")
+    
+    return valid_countries
+
+def get_full_country_name(country_code: str) -> str:
+    """
+    Get full country name from country code.
+    """
+    country_map = {
+        'AF': 'Afghanistan', 'AL': 'Albania', 'DZ': 'Algeria', 'AD': 'Andorra',
+        'AO': 'Angola', 'AG': 'Antigua and Barbuda', 'AR': 'Argentina', 'AM': 'Armenia',
+        'AU': 'Australia', 'AT': 'Austria', 'AZ': 'Azerbaijan', 'BS': 'Bahamas',
+        'BH': 'Bahrain', 'BD': 'Bangladesh', 'BB': 'Barbados', 'BY': 'Belarus',
+        'BE': 'Belgium', 'BZ': 'Belize', 'BJ': 'Benin', 'BT': 'Bhutan',
+        'BO': 'Bolivia', 'BA': 'Bosnia and Herzegovina', 'BW': 'Botswana',
+        'BR': 'Brazil', 'BN': 'Brunei', 'BG': 'Bulgaria', 'BF': 'Burkina Faso',
+        'BI': 'Burundi', 'KH': 'Cambodia', 'CM': 'Cameroon', 'CA': 'Canada',
+        'CV': 'Cape Verde', 'CF': 'Central African Republic', 'TD': 'Chad',
+        'CL': 'Chile', 'CN': 'China', 'CO': 'Colombia', 'KM': 'Comoros',
+        'CG': 'Congo', 'CD': 'Congo (DRC)', 'CR': 'Costa Rica', 'HR': 'Croatia',
+        'CU': 'Cuba', 'CY': 'Cyprus', 'CZ': 'Czech Republic', 'DK': 'Denmark',
+        'DJ': 'Djibouti', 'DM': 'Dominica', 'DO': 'Dominican Republic',
+        'EC': 'Ecuador', 'EG': 'Egypt', 'SV': 'El Salvador', 'GQ': 'Equatorial Guinea',
+        'ER': 'Eritrea', 'EE': 'Estonia', 'ET': 'Ethiopia', 'FJ': 'Fiji',
+        'FI': 'Finland', 'FR': 'France', 'GA': 'Gabon', 'GM': 'Gambia',
+        'GE': 'Georgia', 'DE': 'Germany', 'GH': 'Ghana', 'GR': 'Greece',
+        'GD': 'Grenada', 'GT': 'Guatemala', 'GN': 'Guinea', 'GW': 'Guinea-Bissau',
+        'GY': 'Guyana', 'HT': 'Haiti', 'HN': 'Honduras', 'HU': 'Hungary',
+        'IS': 'Iceland', 'IN': 'India', 'ID': 'Indonesia', 'IR': 'Iran',
+        'IQ': 'Iraq', 'IE': 'Ireland', 'IL': 'Israel', 'IT': 'Italy',
+        'JM': 'Jamaica', 'JP': 'Japan', 'JO': 'Jordan', 'KZ': 'Kazakhstan',
+        'KE': 'Kenya', 'KI': 'Kiribati', 'KP': 'North Korea', 'KR': 'South Korea',
+        'KW': 'Kuwait', 'KG': 'Kyrgyzstan', 'LA': 'Laos', 'LV': 'Latvia',
+        'LB': 'Lebanon', 'LS': 'Lesotho', 'LR': 'Liberia', 'LY': 'Libya',
+        'LI': 'Liechtenstein', 'LT': 'Lithuania', 'LU': 'Luxembourg',
+        'MK': 'North Macedonia', 'MG': 'Madagascar', 'MW': 'Malawi',
+        'MY': 'Malaysia', 'MV': 'Maldives', 'ML': 'Mali', 'MT': 'Malta',
+        'MH': 'Marshall Islands', 'MR': 'Mauritania', 'MU': 'Mauritius',
+        'MX': 'Mexico', 'FM': 'Micronesia', 'MD': 'Moldova', 'MC': 'Monaco',
+        'MN': 'Mongolia', 'ME': 'Montenegro', 'MA': 'Morocco', 'MZ': 'Mozambique',
+        'MM': 'Myanmar', 'NA': 'Namibia', 'NR': 'Nauru', 'NP': 'Nepal',
+        'NL': 'Netherlands', 'NZ': 'New Zealand', 'NI': 'Nicaragua',
+        'NE': 'Niger', 'NG': 'Nigeria', 'NO': 'Norway', 'OM': 'Oman',
+        'PK': 'Pakistan', 'PW': 'Palau', 'PA': 'Panama', 'PG': 'Papua New Guinea',
+        'PY': 'Paraguay', 'PE': 'Peru', 'PH': 'Philippines', 'PL': 'Poland',
+        'PT': 'Portugal', 'QA': 'Qatar', 'RO': 'Romania', 'RU': 'Russia',
+        'RW': 'Rwanda', 'KN': 'Saint Kitts and Nevis', 'LC': 'Saint Lucia',
+        'VC': 'Saint Vincent and the Grenadines', 'WS': 'Samoa', 'SM': 'San Marino',
+        'ST': 'Sao Tome and Principe', 'SA': 'Saudi Arabia', 'SN': 'Senegal',
+        'RS': 'Serbia', 'SC': 'Seychelles', 'SL': 'Sierra Leone', 'SG': 'Singapore',
+        'SK': 'Slovakia', 'SI': 'Slovenia', 'SB': 'Solomon Islands',
+        'SO': 'Somalia', 'ZA': 'South Africa', 'SS': 'South Sudan',
+        'ES': 'Spain', 'LK': 'Sri Lanka', 'SD': 'Sudan', 'SR': 'Suriname',
+        'SZ': 'Eswatini', 'SE': 'Sweden', 'CH': 'Switzerland', 'SY': 'Syria',
+        'TW': 'Taiwan', 'TJ': 'Tajikistan', 'TZ': 'Tanzania', 'TH': 'Thailand',
+        'TL': 'Timor-Leste', 'TG': 'Togo', 'TO': 'Tonga', 'TT': 'Trinidad and Tobago',
+        'TN': 'Tunisia', 'TR': 'Turkey', 'TM': 'Turkmenistan', 'TV': 'Tuvalu',
+        'UG': 'Uganda', 'UA': 'Ukraine', 'AE': 'United Arab Emirates',
+        'GB': 'United Kingdom', 'US': 'United States', 'UY': 'Uruguay',
+        'UZ': 'Uzbekistan', 'VU': 'Vanuatu', 'VA': 'Vatican City',
+        'VE': 'Venezuela', 'VN': 'Vietnam', 'YE': 'Yemen', 'ZM': 'Zambia',
+        'ZW': 'Zimbabwe'
+    }
+    return country_map.get(country_code.upper(), country_code)
+
+# ============================================================================
+# RETRACTION DETECTION FUNCTIONS
+# ============================================================================
+
+def is_retraction_notice(work: dict) -> bool:
+    """
+    Check if a work is a retraction notice.
+    Checks for:
+    - type == "erratum"
+    - "Retraction" or "Retracted" in display_name or title
+    """
+    if not work:
+        return False
+    
+    # Check type
+    work_type = work.get('type', '').lower()
+    if work_type != 'erratum':
+        return False
+    
+    # Check display_name and title for retraction keywords
+    display_name = work.get('display_name', '')
+    title = work.get('title', '')
+    
+    retraction_keywords = ['retraction', 'retracted']
+    combined_text = (display_name + ' ' + title).lower()
+    
+    for keyword in retraction_keywords:
+        if keyword in combined_text:
+            return True
+    
+    return False
+
+def extract_clean_title_from_retraction_notice(work: dict) -> str:
+    """
+    Extract the clean title of the retracted article from a retraction notice.
+    Example:
+    "Retraction Notice to "RETRACTED: The angiostatic molecule Multimerin 2 is processed by MMP-9 to allow sprouting angiogenesis""
+    -> "The angiostatic molecule Multimerin 2 is processed by MMP-9 to allow sprouting angiogenesis"
+    """
+    if not work:
+        return ""
+    
+    display_name = work.get('display_name', '')
+    title = work.get('title', '')
+    
+    combined = display_name if display_name else title
+    
+    # Remove "Retraction Notice to" and similar prefixes
+    patterns = [
+        r'(?i)^retraction\s+notice\s+to\s+["\']?(retracted:\s*)?',
+        r'(?i)^retraction\s+notice\s+["\']?(retracted:\s*)?',
+        r'(?i)^retracted\s+["\']?',
+        r'(?i)^notice\s+of\s+retraction\s+["\']?(retracted:\s*)?',
+        r'(?i)^retraction\s+["\']?(retracted:\s*)?',
+    ]
+    
+    clean_title = combined
+    for pattern in patterns:
+        clean_title = re.sub(pattern, '', clean_title, flags=re.IGNORECASE)
+    
+    # Remove quotes
+    clean_title = re.sub(r'^["\']+|["\']+$', '', clean_title)
+    clean_title = clean_title.strip()
+    
+    # If still has "RETRACTED:" prefix, remove it
+    clean_title = re.sub(r'^RETRACTED:\s*', '', clean_title, flags=re.IGNORECASE)
+    clean_title = clean_title.strip()
+    
+    return clean_title
+
+def extract_clean_title_from_retracted_article(work: dict) -> str:
+    """
+    Extract the clean title from a retracted article.
+    Removes "RETRACTED:" prefix if present.
+    """
+    if not work:
+        return ""
+    
+    title = work.get('title', '')
+    display_name = work.get('display_name', '')
+    
+    combined = display_name if display_name else title
+    
+    # Remove "RETRACTED:" prefix
+    clean_title = re.sub(r'^RETRACTED:\s*', '', combined, flags=re.IGNORECASE)
+    clean_title = clean_title.strip()
+    
+    return clean_title
+
+def find_retracted_article_for_notice(notice_work: dict, retracted_articles: List[dict]) -> Optional[dict]:
+    """
+    Find the retracted article that corresponds to a retraction notice.
+    Uses title matching: extracts clean title from notice and searches for similar title in retracted articles.
+    """
+    if not notice_work or not retracted_articles:
+        return None
+    
+    clean_notice_title = extract_clean_title_from_retraction_notice(notice_work)
+    if not clean_notice_title:
+        return None
+    
+    # Normalize for comparison
+    clean_notice_title_norm = clean_notice_title.lower().strip()
+    
+    best_match = None
+    best_score = 0
+    
+    for article in retracted_articles:
+        clean_article_title = extract_clean_title_from_retracted_article(article)
+        if not clean_article_title:
+            continue
+        
+        clean_article_title_norm = clean_article_title.lower().strip()
+        
+        # Check if titles match exactly or if one contains the other
+        if clean_notice_title_norm == clean_article_title_norm:
+            return article
+        elif clean_article_title_norm in clean_notice_title_norm:
+            # Notice title contains article title (or vice versa)
+            score = len(clean_article_title_norm) / len(clean_notice_title_norm)
+            if score > best_score:
+                best_score = score
+                best_match = article
+        elif clean_notice_title_norm in clean_article_title_norm:
+            score = len(clean_notice_title_norm) / len(clean_article_title_norm)
+            if score > best_score:
+                best_score = score
+                best_match = article
+    
+    # Only return if match is reasonably good (> 0.5 similarity)
+    if best_score > 0.5:
+        return best_match
+    
+    return None
+
+def find_retraction_notices_for_article(article_work: dict, retraction_notices: List[dict]) -> List[dict]:
+    """
+    Find all retraction notices that correspond to a retracted article.
+    """
+    if not article_work or not retraction_notices:
+        return []
+    
+    clean_article_title = extract_clean_title_from_retracted_article(article_work)
+    if not clean_article_title:
+        return []
+    
+    clean_article_title_norm = clean_article_title.lower().strip()
+    
+    matching_notices = []
+    
+    for notice in retraction_notices:
+        clean_notice_title = extract_clean_title_from_retraction_notice(notice)
+        if not clean_notice_title:
+            continue
+        
+        clean_notice_title_norm = clean_notice_title.lower().strip()
+        
+        # Check if titles match
+        if (clean_article_title_norm == clean_notice_title_norm or
+            clean_article_title_norm in clean_notice_title_norm or
+            clean_notice_title_norm in clean_article_title_norm):
+            matching_notices.append(notice)
+    
+    return matching_notices
 
 # ============================================================================
 # ASYNCIO + AIOHTTP CLIENT
@@ -839,27 +1016,20 @@ class OpenAlexAsyncClient:
         
         return data
     
-    async def search_retraction_notices(self, years: List[int], countries: List[str], 
-                                        progress_callback=None) -> List[dict]:
+    async def fetch_retracted_works_by_years(self, years: List[int], 
+                                             progress_callback=None) -> List[dict]:
         """
-        Search for retraction notices by years and countries.
-        Looks for type: erratum|retraction|withdrawal AND keywords in display_name.
+        Fetch all retracted works (is_retracted: true) for given years.
         """
-        all_notices = []
+        all_works = []
         cursor = "*"
         page_count = 0
         total_count = 0
         
-        # Build filter string: years
         years_str = "|".join(map(str, years))
+        filter_str = f"is_retracted:true,publication_year:{years_str}"
         
-        # Build type filter - multiple types
-        type_filters = ["erratum", "retraction", "withdrawal", "retraction-notice"]
-        type_str = "|".join(type_filters)
-        
-        filter_str = f"publication_year:{years_str},type:{type_str}"
-        
-        logger.info(f"Searching for retraction notices, years {years}, countries {countries}")
+        logger.info(f"Fetching retracted works for years {years}")
         
         try:
             while True:
@@ -876,14 +1046,14 @@ class OpenAlexAsyncClient:
                 response = requests.get(url, params=params, headers=POLITE_POOL_HEADER, timeout=60)
                 
                 if response.status_code != 200:
-                    logger.error(f"Error fetching notices: {response.status_code}")
+                    logger.error(f"Error fetching retracted works: {response.status_code}")
                     break
                 
                 data = response.json()
                 
                 if page_count == 1:
                     total_count = data.get('meta', {}).get('count', 0)
-                    logger.info(f"Total notices found: {total_count}")
+                    logger.info(f"Total retracted works found: {total_count}")
                     
                     if total_count == 0:
                         return []
@@ -892,27 +1062,13 @@ class OpenAlexAsyncClient:
                 if not works:
                     break
                 
-                # Filter by retraction keywords in display_name or title                for work in works:
-                    display_name = work.get('display_name', '')
-                    title = work.get('title', '')
-                    
-                    # Check for retraction keywords
-                    if re.search(r'(?i)retraction|retracted', display_name) or re.search(r'(?i)retraction|retracted', title):
-                        # Check if notice has authors from selected countries
-                        if countries:
-                            has_country = self._work_has_country(work, countries)
-                            if has_country:
-                                all_notices.append(work)
-                                cache_retraction_notice(work.get('id', ''), work)
-                        else:
-                            all_notices.append(work)
-                            cache_retraction_notice(work.get('id', ''), work)
+                all_works.extend(works)
                 
                 if progress_callback and total_count > 0:
-                    progress = min(len(all_notices) / total_count, 1.0)
-                    progress_callback(progress, len(all_notices), page_count, total_count)
+                    progress = min(len(all_works) / total_count, 1.0)
+                    progress_callback(progress, len(all_works), page_count, total_count)
                 
-                logger.info(f"Page {page_count}: found {len(works)} works, filtered: {len(all_notices)} notices")
+                logger.info(f"Page {page_count}: got {len(works)} retracted works, total: {len(all_works)}/{total_count}")
                 
                 next_cursor = data.get('meta', {}).get('next_cursor')
                 if not next_cursor:
@@ -921,29 +1077,27 @@ class OpenAlexAsyncClient:
                 cursor = next_cursor
                 time.sleep(0.1)
             
-            logger.info(f"Finished searching notices. Total: {len(all_notices)}")
-            return all_notices
+            logger.info(f"Finished fetching retracted works. Total: {len(all_works)}")
+            return all_works
             
         except Exception as e:
-            logger.error(f"Error in search_retraction_notices: {str(e)}")
-            return all_notices
+            logger.error(f"Error in fetch_retracted_works_by_years: {str(e)}")
+            return all_works
     
-    async def search_retracted_articles(self, years: List[int], countries: List[str],
-                                        progress_callback=None) -> List[dict]:
+    async def fetch_retraction_notices_by_years(self, years: List[int],
+                                                progress_callback=None) -> List[dict]:
         """
-        Search for retracted articles by years and countries.
-        Looks for is_retracted: true.
+        Fetch all retraction notices (type: erratum with retraction keywords) for given years.
         """
-        all_articles = []
+        all_works = []
         cursor = "*"
         page_count = 0
         total_count = 0
         
-        # Build filter string: years + is_retracted
         years_str = "|".join(map(str, years))
-        filter_str = f"publication_year:{years_str},is_retracted:true"
+        filter_str = f"type:erratum,publication_year:{years_str}"
         
-        logger.info(f"Searching for retracted articles, years {years}, countries {countries}")
+        logger.info(f"Fetching retraction notices for years {years}")
         
         try:
             while True:
@@ -960,14 +1114,14 @@ class OpenAlexAsyncClient:
                 response = requests.get(url, params=params, headers=POLITE_POOL_HEADER, timeout=60)
                 
                 if response.status_code != 200:
-                    logger.error(f"Error fetching articles: {response.status_code}")
+                    logger.error(f"Error fetching retraction notices: {response.status_code}")
                     break
                 
                 data = response.json()
                 
                 if page_count == 1:
                     total_count = data.get('meta', {}).get('count', 0)
-                    logger.info(f"Total retracted articles found: {total_count}")
+                    logger.info(f"Total erratum works found: {total_count}")
                     
                     if total_count == 0:
                         return []
@@ -976,22 +1130,16 @@ class OpenAlexAsyncClient:
                 if not works:
                     break
                 
-                # Filter by countries
+                # Filter for retraction notices
                 for work in works:
-                    if countries:
-                        has_country = self._work_has_country(work, countries)
-                        if has_country:
-                            all_articles.append(work)
-                            cache_retracted_article(work.get('id', ''), work)
-                    else:
-                        all_articles.append(work)
-                        cache_retracted_article(work.get('id', ''), work)
+                    if is_retraction_notice(work):
+                        all_works.append(work)
                 
                 if progress_callback and total_count > 0:
-                    progress = min(len(all_articles) / total_count, 1.0)
-                    progress_callback(progress, len(all_articles), page_count, total_count)
+                    progress = min(len(all_works) / total_count, 1.0)
+                    progress_callback(progress, len(all_works), page_count, total_count)
                 
-                logger.info(f"Page {page_count}: found {len(works)} works, filtered: {len(all_articles)} articles")
+                logger.info(f"Page {page_count}: got {len(works)} works, retraction notices: {len(all_works)}")
                 
                 next_cursor = data.get('meta', {}).get('next_cursor')
                 if not next_cursor:
@@ -1000,36 +1148,25 @@ class OpenAlexAsyncClient:
                 cursor = next_cursor
                 time.sleep(0.1)
             
-            logger.info(f"Finished searching articles. Total: {len(all_articles)}")
-            return all_articles
+            logger.info(f"Finished fetching retraction notices. Total: {len(all_works)}")
+            return all_works
             
         except Exception as e:
-            logger.error(f"Error in search_retracted_articles: {str(e)}")
-            return all_articles
+            logger.error(f"Error in fetch_retraction_notices_by_years: {str(e)}")
+            return all_works
     
-    def _work_has_country(self, work: dict, countries: List[str]) -> bool:
-        """
-        Check if work has at least one author from selected countries.
-        """
-        if not countries:
-            return True
+    async def fetch_topic_stats(self, topic_id: str) -> Optional[dict]:
+        cached = get_cached_topic_stats(topic_id)
+        if cached:
+            return cached
         
-        authorships = work.get('authorships', [])
-        for authorship in authorships:
-            institutions = authorship.get('institutions', [])
-            for inst in institutions:
-                country_code = inst.get('country_code', '')
-                if country_code and country_code.upper() in countries:
-                    return True
-                # Also check country field
-                country = inst.get('country', '')
-                if country:
-                    # Try to find matching country code
-                    for code, name in COUNTRY_CODE_MAP.items():
-                        if name.upper() == country.upper() and code in countries:
-                            return True
+        url = f"{OPENALEX_BASE_URL}/topics/{topic_id}"
+        data = await self.make_request(url)
         
-        return False
+        if data:
+            cache_topic_stats(topic_id, data)
+        
+        return data
 
 # ============================================================================
 # SYNCHRONOUS WRAPPERS
@@ -1086,54 +1223,57 @@ def fetch_works_by_dois_sync(dois: List[str]) -> Tuple[List[dict], int, int]:
     
     return all_results, successful, failed
 
-def search_retraction_notices_sync(years: List[int], countries: List[str]) -> List[dict]:
+def fetch_retracted_works_by_years_sync(years: List[int]) -> List[dict]:
     """
-    Search for retraction notices by years and countries.
+    Fetch all retracted works for given years.
     """
     progress_bar = st.progress(0)
     status_text = st.empty()
-    all_notices = []
+    all_works = []
     
     def update_progress(progress, count, page, total):
         progress_bar.progress(progress)
-        status_text.text(f"Page {page}: {count}/{total} notices found")
+        status_text.text(f"Page {page}: {count}/{total} retracted works fetched")
     
-    async def search():
+    async def fetch():
         async with OpenAlexAsyncClient() as client:
-            return await client.search_retraction_notices(
-                years, countries, update_progress
-            )
+            return await client.fetch_retracted_works_by_years(years, update_progress)
     
-    result = run_async(search())
+    result = run_async(fetch())
     progress_bar.empty()
     status_text.empty()
     return result
 
-def search_retracted_articles_sync(years: List[int], countries: List[str]) -> List[dict]:
+def fetch_retraction_notices_by_years_sync(years: List[int]) -> List[dict]:
     """
-    Search for retracted articles by years and countries.
+    Fetch all retraction notices for given years.
     """
     progress_bar = st.progress(0)
     status_text = st.empty()
-    all_articles = []
+    all_works = []
     
     def update_progress(progress, count, page, total):
         progress_bar.progress(progress)
-        status_text.text(f"Page {page}: {count}/{total} articles found")
+        status_text.text(f"Page {page}: {count}/{total} works scanned")
     
-    async def search():
+    async def fetch():
         async with OpenAlexAsyncClient() as client:
-            return await client.search_retracted_articles(
-                years, countries, update_progress
-            )
+            return await client.fetch_retraction_notices_by_years(years, update_progress)
     
-    result = run_async(search())
+    result = run_async(fetch())
     progress_bar.empty()
     status_text.empty()
     return result
+
+def fetch_topic_stats_sync(topic_id: str) -> Optional[dict]:
+    async def fetch():
+        async with OpenAlexAsyncClient() as client:
+            return await client.fetch_topic_stats(topic_id)
+    
+    return run_async(fetch())
 
 # ============================================================================
-# HELPER FUNCTIONS (UNCHANGED)
+# HELPER FUNCTIONS
 # ============================================================================
 
 def normalize_word(word: str) -> str:
@@ -1256,7 +1396,7 @@ def extract_numeric_from_doi(doi: str) -> int:
     return 0
 
 # ============================================================================
-# ENRICHMENT FUNCTIONS FOR RETRACTION
+# ENRICHMENT FUNCTIONS FOR RETRACTION DATA
 # ============================================================================
 
 def extract_all_authors_and_affiliations(work: dict) -> Tuple[List[str], List[str]]:
@@ -1293,6 +1433,58 @@ def extract_all_authors_and_affiliations(work: dict) -> Tuple[List[str], List[st
                             affiliations.add(inst_name)
     
     return authors, list(affiliations)
+
+def extract_authors_with_countries(work: dict) -> List[Tuple[str, List[str]]]:
+    """
+    Extract all authors with their countries.
+    Returns list of (author_name, [country_codes]) tuples.
+    """
+    authors_with_countries = []
+    
+    authorships = work.get('authorships', [])
+    
+    for authorship in authorships:
+        if authorship:
+            author = authorship.get('author', {})
+            if author:
+                author_name = author.get('display_name', '')
+                if author_name:
+                    import unicodedata
+                    author_name = unicodedata.normalize('NFC', str(author_name))
+                    author_name = re.sub(r'[^a-zA-Zа-яА-ЯёЁ\s\.\,\-\'\(\)]', '', author_name)
+                    author_name = re.sub(r'\s+', ' ', author_name).strip()
+                    
+                    if author_name:
+                        countries = []
+                        for inst in authorship.get('institutions', []):
+                            if inst:
+                                country_code = inst.get('country_code', '')
+                                if country_code:
+                                    countries.append(country_code.upper())
+                        if countries:
+                            authors_with_countries.append((author_name, list(set(countries))))
+    
+    return authors_with_countries
+
+def extract_author_name_parts(author_name: str) -> Tuple[str, str]:
+    """
+    Extract last name and first initial from author name.
+    Example: "Eva Andreuzzi" -> ("Andreuzzi", "E.")
+    """
+    if not author_name:
+        return "", ""
+    
+    parts = author_name.strip().split()
+    if not parts:
+        return "", ""
+    
+    last_name = parts[-1]
+    
+    # Get first initial from first part
+    first_part = parts[0]
+    first_initial = first_part[0].upper() if first_part else ""
+    
+    return last_name, first_initial
 
 def extract_country_from_work(work: dict) -> str:
     """
@@ -1340,8 +1532,12 @@ def get_publication_type_info(work: dict) -> Tuple[str, str, str]:
     raw_type = primary_location.get('raw_type', '').lower() if primary_location and isinstance(primary_location, dict) and primary_location.get('raw_type') else ''
     
     # Check for retraction notice
-    if pub_type in ['erratum', 'retraction', 'withdrawal', 'retraction-notice']:
-        return ('Retraction Notice', '#e74c3c', '🔴')
+    if is_retraction_notice(work):
+        return ('Retraction Notice', '#e74c3c', '⚠️')
+    
+    # Check if retracted
+    if work.get('is_retracted', False):
+        return ('Retracted Article', '#c0392b', '🚫')
     
     # Check for preprint / repository
     if pub_type == 'preprint' or source_type == 'repository' or 'preprint' in pub_type:
@@ -1364,21 +1560,23 @@ def get_publication_type_info(work: dict) -> Tuple[str, str, str]:
         return (pub_type.capitalize(), '#7f8c8d', '📎')
     return ('Other', '#95a5a6', '📎')
 
-def enrich_retraction_data(work: dict, is_notice: bool = False) -> dict:
+def enrich_retraction_card(article_work: dict, notice_works: List[dict] = None) -> dict:
     """
-    Enrich retraction work data with complete information including all fields.
-    No truncation of authors or affiliations.
+    Enrich a retraction card combining retracted article and its retraction notices.
     """
-    if not work:
+    if not article_work:
         return {}
     
-    doi_raw = work.get('doi')
+    notice_works = notice_works or []
+    
+    # Extract basic info from article
+    doi_raw = article_work.get('doi')
     doi_clean = ''
     if doi_raw:
         doi_clean = str(doi_raw).replace('https://doi.org/', '')
     
     # Extract ALL authors and affiliations (no truncation)
-    authors, affiliations = extract_all_authors_and_affiliations(work)
+    authors, affiliations = extract_all_authors_and_affiliations(article_work)
     authors_str = ', '.join(authors) if authors else 'Authors not specified'
     
     # Join all affiliations with slash separator
@@ -1387,8 +1585,11 @@ def enrich_retraction_data(work: dict, is_notice: bool = False) -> dict:
     else:
         affiliations_str = 'No affiliations specified'
     
+    # Extract authors with countries
+    authors_with_countries = extract_authors_with_countries(article_work)
+    
     # Extract publication info
-    biblio = work.get('biblio', {})
+    biblio = article_work.get('biblio', {})
     volume = biblio.get('volume', '')
     issue = biblio.get('issue', '')
     first_page = biblio.get('first_page', '')
@@ -1407,7 +1608,7 @@ def enrich_retraction_data(work: dict, is_notice: bool = False) -> dict:
     journal_name = ''
     publisher = ''
     publisher_chain = []
-    primary_location = work.get('primary_location')
+    primary_location = article_work.get('primary_location')
     if primary_location:
         source = primary_location.get('source', {})
         if source:
@@ -1420,7 +1621,7 @@ def enrich_retraction_data(work: dict, is_notice: bool = False) -> dict:
             publisher_chain = source.get('host_organization_lineage_names', [])
     
     # Extract topic info
-    primary_topic = work.get('primary_topic', {})
+    primary_topic = article_work.get('primary_topic', {})
     topic_name = primary_topic.get('display_name', '') if primary_topic else ''
     topic_id = ''
     if primary_topic:
@@ -1429,45 +1630,67 @@ def enrich_retraction_data(work: dict, is_notice: bool = False) -> dict:
             topic_id = topic_id_raw.split('/')[-1]
     
     # Citation metrics
-    citations_total = work.get('cited_by_count', 0)
-    referenced_works = work.get('referenced_works_count', 0)
+    citations_total = article_work.get('cited_by_count', 0)
+    referenced_works = article_work.get('referenced_works_count', 0)
     
-    publication_year = work.get('publication_year', 0)
+    publication_year = article_work.get('publication_year', 0)
     current_year = datetime.now().year
-    
     age = max(1, current_year - publication_year) if publication_year > 0 else 1
     citations_per_year = citations_total / age
     
     # OA status
-    oa_status = get_oa_status(work)
+    oa_status = get_oa_status(article_work)
     
     # Publication date
-    publication_date = work.get('publication_date', '')
+    publication_date = article_work.get('publication_date', '')
     
     # Get publication type info
-    type_label, type_color, type_icon = get_publication_type_info(work)
+    type_label, type_color, type_icon = get_publication_type_info(article_work)
     
-    # Extract all countries from authorships
-    countries = set()
-    authorships = work.get('authorships', [])
-    for authorship in authorships:
-        institutions = authorship.get('institutions', [])
-        for inst in institutions:
-            country_code = inst.get('country_code', '')
-            if country_code:
-                countries.add(country_code.upper())
-            country = inst.get('country', '')
-            if country:
-                for code, name in COUNTRY_CODE_MAP.items():
-                    if name.upper() == country.upper():
-                        countries.add(code)
-                        break
+    # Process notice works
+    notice_data = []
+    for notice in notice_works:
+        notice_doi = notice.get('doi', '').replace('https://doi.org/', '')
+        notice_year = notice.get('publication_year', 0)
+        notice_date = notice.get('publication_date', '')
+        notice_title = notice.get('title', '')
+        notice_display_name = notice.get('display_name', '')
+        
+        notice_data.append({
+            'doi': notice_doi,
+            'doi_url': f"https://doi.org/{notice_doi}" if notice_doi else '',
+            'year': notice_year,
+            'date': notice_date,
+            'title': notice_title,
+            'display_name': notice_display_name
+        })
+    
+    # Determine card type
+    has_notice = len(notice_data) > 0
+    is_retracted = article_work.get('is_retracted', False)
+    
+    if has_notice and is_retracted:
+        card_type = 'retracted_with_notice'
+        card_type_label = 'Retracted Article + Retraction Notice'
+        card_type_icon = '⚠️🚫'
+    elif is_retracted:
+        card_type = 'retracted_only'
+        card_type_label = 'Retracted Article (No Notice)'
+        card_type_icon = '🚫'
+    elif has_notice:
+        card_type = 'notice_only'
+        card_type_label = 'Retraction Notice (No Article)'
+        card_type_icon = '⚠️'
+    else:
+        card_type = 'unknown'
+        card_type_label = 'Unknown'
+        card_type_icon = '❓'
     
     enriched = {
         'doi': doi_clean,
         'doi_url': f"https://doi.org/{doi_clean}" if doi_clean else '',
-        'title': work.get('title', 'No title'),
-        'display_name': work.get('display_name', 'No title'),
+        'title': article_work.get('title', 'No title'),
+        'display_name': article_work.get('display_name', ''),
         'publication_year': publication_year,
         'publication_date': publication_date,
         'cited_by_count': citations_total,
@@ -1477,6 +1700,7 @@ def enrich_retraction_data(work: dict, is_notice: bool = False) -> dict:
         'authors_list': authors,
         'affiliations': affiliations,
         'affiliations_str': affiliations_str,
+        'authors_with_countries': authors_with_countries,
         'journal_name': journal_name,
         'publisher': publisher,
         'publisher_chain': publisher_chain,
@@ -1486,398 +1710,338 @@ def enrich_retraction_data(work: dict, is_notice: bool = False) -> dict:
         'primary_topic': topic_name,
         'topic_id': topic_id,
         'oa_status': oa_status,
-        'type': work.get('type', ''),
+        'type': article_work.get('type', ''),
         'type_label': type_label,
         'type_color': type_color,
         'type_icon': type_icon,
-        'country': extract_country_from_work(work),
-        'countries': list(countries),
-        'is_retracted': work.get('is_retracted', False),
-        'is_notice': is_notice,
-        'openalex_id': work.get('id', ''),
-        'referenced_works': work.get('referenced_works', [])
+        'country': extract_country_from_work(article_work),
+        'is_retracted': is_retracted,
+        'notice_data': notice_data,
+        'card_type': card_type,
+        'card_type_label': card_type_label,
+        'card_type_icon': card_type_icon,
+        'has_notice': has_notice,
+        'notice_count': len(notice_data)
+    }
+    
+    return enriched
+
+def enrich_retraction_notice_only(notice_work: dict) -> dict:
+    """
+    Enrich a retraction notice that doesn't have a corresponding retracted article.
+    """
+    if not notice_work:
+        return {}
+    
+    # Extract basic info from notice
+    doi_raw = notice_work.get('doi')
+    doi_clean = ''
+    if doi_raw:
+        doi_clean = str(doi_raw).replace('https://doi.org/', '')
+    
+    # Extract ALL authors and affiliations (no truncation)
+    authors, affiliations = extract_all_authors_and_affiliations(notice_work)
+    authors_str = ', '.join(authors) if authors else 'Authors not specified'
+    
+    # Join all affiliations with slash separator
+    if affiliations:
+        affiliations_str = ' / '.join(affiliations)
+    else:
+        affiliations_str = 'No affiliations specified'
+    
+    # Extract authors with countries
+    authors_with_countries = extract_authors_with_countries(notice_work)
+    
+    # Extract publication info
+    biblio = notice_work.get('biblio', {})
+    volume = biblio.get('volume', '')
+    issue = biblio.get('issue', '')
+    first_page = biblio.get('first_page', '')
+    last_page = biblio.get('last_page', '')
+    
+    # Format pages
+    pages_str = ''
+    if first_page and last_page and first_page != last_page:
+        pages_str = f"{first_page}-{last_page}"
+    elif first_page:
+        pages_str = first_page
+    elif last_page:
+        pages_str = last_page
+    
+    # Get journal and publisher info
+    journal_name = ''
+    publisher = ''
+    publisher_chain = []
+    primary_location = notice_work.get('primary_location')
+    if primary_location:
+        source = primary_location.get('source', {})
+        if source:
+            journal_name = source.get('display_name', '') or ''
+            publisher = source.get('host_organization_name', '') or ''
+            if not publisher:
+                publisher = source.get('publisher', '') or ''
+            if not publisher:
+                publisher = source.get('host_organization', '') or ''
+            publisher_chain = source.get('host_organization_lineage_names', [])
+    
+    # Extract topic info
+    primary_topic = notice_work.get('primary_topic', {})
+    topic_name = primary_topic.get('display_name', '') if primary_topic else ''
+    topic_id = ''
+    if primary_topic:
+        topic_id_raw = primary_topic.get('id', '')
+        if topic_id_raw:
+            topic_id = topic_id_raw.split('/')[-1]
+    
+    # Citation metrics
+    citations_total = notice_work.get('cited_by_count', 0)
+    referenced_works = notice_work.get('referenced_works_count', 0)
+    
+    publication_year = notice_work.get('publication_year', 0)
+    current_year = datetime.now().year
+    age = max(1, current_year - publication_year) if publication_year > 0 else 1
+    citations_per_year = citations_total / age
+    
+    # OA status
+    oa_status = get_oa_status(notice_work)
+    
+    # Publication date
+    publication_date = notice_work.get('publication_date', '')
+    
+    # Get publication type info
+    type_label, type_color, type_icon = get_publication_type_info(notice_work)
+    
+    enriched = {
+        'doi': doi_clean,
+        'doi_url': f"https://doi.org/{doi_clean}" if doi_clean else '',
+        'title': notice_work.get('title', 'No title'),
+        'display_name': notice_work.get('display_name', ''),
+        'publication_year': publication_year,
+        'publication_date': publication_date,
+        'cited_by_count': citations_total,
+        'citations_per_year': round(citations_per_year, 1),
+        'referenced_works_count': referenced_works,
+        'authors': authors_str,
+        'authors_list': authors,
+        'affiliations': affiliations,
+        'affiliations_str': affiliations_str,
+        'authors_with_countries': authors_with_countries,
+        'journal_name': journal_name,
+        'publisher': publisher,
+        'publisher_chain': publisher_chain,
+        'volume': volume,
+        'issue': issue,
+        'pages': pages_str,
+        'primary_topic': topic_name,
+        'topic_id': topic_id,
+        'oa_status': oa_status,
+        'type': notice_work.get('type', ''),
+        'type_label': type_label,
+        'type_color': type_color,
+        'type_icon': type_icon,
+        'country': extract_country_from_work(notice_work),
+        'is_retracted': False,
+        'notice_data': [{
+            'doi': doi_clean,
+            'doi_url': f"https://doi.org/{doi_clean}" if doi_clean else '',
+            'year': publication_year,
+            'date': publication_date,
+            'title': notice_work.get('title', ''),
+            'display_name': notice_work.get('display_name', '')
+        }],
+        'card_type': 'notice_only',
+        'card_type_label': 'Retraction Notice (No Article)',
+        'card_type_icon': '⚠️',
+        'has_notice': True,
+        'notice_count': 1
     }
     
     return enriched
 
 # ============================================================================
-# MERGING RETRACTION PAIRS
+# RETRACTION CARD GROUPING AND SORTING FUNCTIONS
 # ============================================================================
 
-def extract_clean_title(title: str) -> str:
+def filter_cards_by_countries(cards: List[dict], selected_countries: List[str]) -> List[dict]:
     """
-    Extract clean title from retraction notice.
-    Remove prefixes like "Retraction Notice to", "RETRACTED:", etc.
+    Filter retraction cards by selected countries.
+    A card is included if at least one author belongs to a selected country.
     """
-    if not title:
+    if not selected_countries:
+        return cards
+    
+    filtered_cards = []
+    selected_countries_upper = [c.upper() for c in selected_countries]
+    
+    for card in cards:
+        authors_with_countries = card.get('authors_with_countries', [])
+        card_countries = set()
+        
+        for author_name, countries in authors_with_countries:
+            for country in countries:
+                if country.upper():
+                    card_countries.add(country.upper())
+        
+        # Check if any card country is in selected countries
+        if any(country in selected_countries_upper for country in card_countries):
+            filtered_cards.append(card)
+    
+    return filtered_cards
+
+def get_author_last_initial(author_name: str) -> str:
+    """
+    Get author's last name and first initial.
+    Example: "Eva Andreuzzi" -> "Andreuzzi E."
+    """
+    if not author_name:
         return ""
     
-    # Remove common prefixes
-    patterns = [
-        r'(?i)^Retraction Notice to\s*["\u201c]*',
-        r'(?i)^Retraction Notice:\s*["\u201c]*',
-        r'(?i)^Notice to\s*["\u201c]*',
-        r'(?i)^Notice:\s*["\u201c]*',
-        r'(?i)^RETRACTED:\s*["\u201c]*',
-        r'(?i)^Retracted:\s*["\u201c]*',
-        r'(?i)^Statement of Retraction:\s*["\u201c]*',
-    ]
+    parts = author_name.strip().split()
+    if not parts:
+        return ""
     
-    clean_title = title
-    for pattern in patterns:
-        clean_title = re.sub(pattern, '', clean_title)
+    last_name = parts[-1]
+    first_initial = parts[0][0].upper() if parts[0] else ""
     
-    # Remove trailing quotes and spaces
-    clean_title = clean_title.strip()
-    clean_title = re.sub(r'^["\u201c\u201d]+|["\u201c\u201d]+$', '', clean_title)
-    clean_title = clean_title.strip()
-    
-    return clean_title
+    return f"{last_name} {first_initial}."
 
-def find_matching_article(clean_title: str, articles: List[dict]) -> Optional[dict]:
+def group_cards_by_country_affiliation(cards: List[dict], selected_countries: List[str]) -> Dict[str, Dict[str, List[dict]]]:
     """
-    Find matching retracted article by clean title.
-    Exact match after cleaning both titles.
-    """
-    if not clean_title or not articles:
-        return None
-    
-    clean_title_lower = clean_title.lower().strip()
-    
-    for article in articles:
-        article_title = article.get('display_name', '') or article.get('title', '')
-        if not article_title:
-            continue
-        
-        # Try exact match after cleaning
-        article_clean = extract_clean_title(article_title).lower().strip()
-        if article_clean == clean_title_lower:
-            return article
-        
-        # Also try matching the clean_title against the full title
-        if clean_title_lower in article_title.lower():
-            return article
-        
-        # Try matching the article title against the clean_title
-        if article_clean and article_clean in clean_title_lower:
-            return article
-    
-    return None
-
-def merge_retraction_pairs(notices: List[dict], articles: List[dict]) -> List[dict]:
-    """
-    Merge retraction notices with their corresponding retracted articles.
-    Returns list of merged cards.
-    """
-    merged_cards = []
-    used_notices = set()
-    used_articles = set()
-    
-    # First pass: try to match notices with articles
-    for notice in notices:
-        notice_title = notice.get('display_name', '') or notice.get('title', '')
-        clean_title = extract_clean_title(notice_title)
-        
-        if clean_title:
-            matched_article = find_matching_article(clean_title, articles)
-            if matched_article:
-                article_id = matched_article.get('id', '')
-                notice_id = notice.get('id', '')
-                
-                # Check if this article already has a notice
-                # If multiple notices for same article, we'll handle later
-                if article_id not in used_articles:
-                    # Create merged card
-                    merged_card = {
-                        'article_data': matched_article,
-                        'notice_data': [notice],
-                        'is_merged': True,
-                        'article_enriched': enrich_retraction_data(matched_article, is_notice=False),
-                        'notice_enriched': [enrich_retraction_data(notice, is_notice=True)]
-                    }
-                    merged_cards.append(merged_card)
-                    used_articles.add(article_id)
-                    used_notices.add(notice_id)
-                else:
-                    # Multiple notices for same article - add to existing
-                    for card in merged_cards:
-                        if card.get('article_data', {}).get('id', '') == article_id:
-                            if isinstance(card['notice_data'], list):
-                                card['notice_data'].append(notice)
-                                card['notice_enriched'].append(enrich_retraction_data(notice, is_notice=True))
-                            used_notices.add(notice_id)
-                            break
-    
-    # Second pass: notices without matching articles
-    for notice in notices:
-        notice_id = notice.get('id', '')
-        if notice_id not in used_notices:
-            merged_card = {
-                'article_data': None,
-                'notice_data': [notice],
-                'is_merged': False,
-                'article_enriched': None,
-                'notice_enriched': [enrich_retraction_data(notice, is_notice=True)]
-            }
-            merged_cards.append(merged_card)
-            used_notices.add(notice_id)
-    
-    # Third pass: articles without matching notices
-    for article in articles:
-        article_id = article.get('id', '')
-        if article_id not in used_articles:
-            merged_card = {
-                'article_data': article,
-                'notice_data': [],
-                'is_merged': False,
-                'article_enriched': enrich_retraction_data(article, is_notice=False),
-                'notice_enriched': []
-            }
-            merged_cards.append(merged_card)
-            used_articles.add(article_id)
-    
-    return merged_cards
-
-# ============================================================================
-# GROUPING FUNCTIONS FOR RETRACTION REPORTS
-# ============================================================================
-
-def group_cards_by_country_affiliation(cards: List[dict]) -> Dict[str, Dict[str, List[dict]]]:
-    """
-    Group merged cards by Country -> Affiliation.
-    Cards with multiple countries appear in multiple groups.
+    Group retraction cards by Country -> Affiliation.
+    Only includes countries from selected_countries.
+    Sorted by number of cards (descending).
     """
     hierarchy = defaultdict(lambda: defaultdict(list))
     
+    selected_countries_upper = [c.upper() for c in selected_countries] if selected_countries else []
+    
     for card in cards:
-        # Determine which countries this card belongs to
-        countries = set()
-        
-        # Get countries from article if available
-        if card.get('article_enriched'):
-            article_countries = card['article_enriched'].get('countries', [])
-            countries.update(article_countries)
-        else:
-            # Get from notice
-            for notice_enriched in card.get('notice_enriched', []):
-                notice_countries = notice_enriched.get('countries', [])
-                countries.update(notice_countries)
-        
-        # If no countries found, use 'Unknown'
-        if not countries:
-            countries.add('Unknown')
-        
-        # Get affiliations from article if available
-        affiliations = []
-        if card.get('article_enriched'):
-            affiliations = card['article_enriched'].get('affiliations', [])
-        if not affiliations:
-            for notice_enriched in card.get('notice_enriched', []):
-                affs = notice_enriched.get('affiliations', [])
-                affiliations.extend(affs)
-        
+        authors_with_countries = card.get('authors_with_countries', [])
+        affiliations = card.get('affiliations', ['Unknown Affiliation'])
         if not affiliations:
             affiliations = ['Unknown Affiliation']
         
-        # Add card to each country and each affiliation
-        for country in countries:
-            country_full = COUNTRY_CODE_MAP.get(country, country)
+        card_countries = set()
+        for author_name, countries in authors_with_countries:
+            for country in countries:
+                if country.upper():
+                    card_countries.add(country.upper())
+        
+        # Only include selected countries
+        if selected_countries_upper:
+            card_countries = card_countries.intersection(set(selected_countries_upper))
+        
+        for country in card_countries:
+            country_name = get_full_country_name(country)
             for aff in affiliations:
-                hierarchy[country_full][aff].append(card)
+                if aff:
+                    hierarchy[country][aff].append(card)
     
-    return hierarchy
+    # Sort by card count (descending)
+    sorted_hierarchy = {}
+    
+    # Sort countries by total card count
+    country_items = []
+    for country in hierarchy.keys():
+        total_count = sum(len(cards) for cards in hierarchy[country].values())
+        country_items.append((country, total_count))
+    country_items.sort(key=lambda x: x[1], reverse=True)
+    
+    for country, _ in country_items:
+        # Sort affiliations by card count
+        aff_items = []
+        for aff in hierarchy[country].keys():
+            aff_items.append((aff, len(hierarchy[country][aff])))
+        aff_items.sort(key=lambda x: x[1], reverse=True)
+        
+        sorted_hierarchy[country] = {}
+        for aff, _ in aff_items:
+            sorted_hierarchy[country][aff] = hierarchy[country][aff]
+    
+    return sorted_hierarchy
 
-def group_cards_by_author(cards: List[dict]) -> Dict[str, List[dict]]:
+def group_cards_by_author(cards: List[dict], selected_countries: List[str]) -> Dict[str, List[dict]]:
     """
-    Group merged cards by author (last name + first initial).
-    Cards with multiple authors appear in multiple author groups.
+    Group retraction cards by author (last name + first initial).
+    Only includes authors from selected countries.
+    Sorted by number of cards (descending).
     """
     author_cards = defaultdict(list)
     
+    selected_countries_upper = [c.upper() for c in selected_countries] if selected_countries else []
+    
     for card in cards:
-        # Get authors from article if available
-        authors = []
-        if card.get('article_enriched'):
-            authors = card['article_enriched'].get('authors_list', [])
-        if not authors:
-            for notice_enriched in card.get('notice_enriched', []):
-                auths = notice_enriched.get('authors_list', [])
-                authors.extend(auths)
+        authors_with_countries = card.get('authors_with_countries', [])
         
-        if not authors:
-            authors = ['Unknown Author']
-        
-        # For each author, extract last name + first initial
-        for author in authors:
-            if author and author != 'Authors not specified':
-                # Parse author name: "Last, First" or "First Last"
-                parts = author.split()
-                if len(parts) >= 2:
-                    # Try to get last name and first initial
-                    last_name = parts[-1]
-                    first_initial = parts[0][0] if parts[0] else ''
-                    author_key = f"{last_name}, {first_initial}."
-                else:
-                    author_key = author
-                
+        for author_name, countries in authors_with_countries:
+            # Check if author belongs to selected countries
+            author_countries = [c.upper() for c in countries if c]
+            
+            if selected_countries_upper:
+                if not any(country in selected_countries_upper for country in author_countries):
+                    continue
+            
+            author_key = get_author_last_initial(author_name)
+            if author_key:
                 author_cards[author_key].append(card)
     
-    return dict(author_cards)
+    # Sort authors by card count (descending)
+    sorted_authors = {}
+    for author in sorted(author_cards.keys(), key=lambda x: len(author_cards[x]), reverse=True):
+        sorted_authors[author] = author_cards[author]
+    
+    return sorted_authors
 
 def group_cards_by_publisher_journal(cards: List[dict]) -> Dict[str, Dict[str, List[dict]]]:
     """
-    Group merged cards by Publisher -> Journal.
+    Group retraction cards by Publisher -> Journal.
+    Sorted by number of cards (descending).
     """
     hierarchy = defaultdict(lambda: defaultdict(list))
     
     for card in cards:
-        # Get publisher and journal from article if available
-        publisher = 'Unknown Publisher'
-        journal = 'Unknown Journal'
+        publisher = card.get('publisher', 'Unknown Publisher')
+        if publisher is None:
+            publisher = 'Unknown Publisher'
+        if isinstance(publisher, str):
+            if publisher.startswith('P') and publisher[1:].isdigit() or 'openalex.org/P' in publisher:
+                publisher_chain = card.get('publisher_chain', [])
+                if publisher_chain and len(publisher_chain) > 0:
+                    publisher = publisher_chain[0]
+                else:
+                    publisher = 'Unknown Publisher'
         
-        if card.get('article_enriched'):
-            publisher = card['article_enriched'].get('publisher', 'Unknown Publisher')
-            journal = card['article_enriched'].get('journal_name', 'Unknown Journal')
-        
-        if publisher in ['', None, 'null', 'Unknown Publisher']:
-            # Try to get from notice
-            for notice_enriched in card.get('notice_enriched', []):
-                pub = notice_enriched.get('publisher', '')
-                if pub and pub not in ['', 'null', 'Unknown Publisher']:
-                    publisher = pub
-                    break
-        
-        if journal in ['', None, 'null', 'Unknown Journal']:
-            for notice_enriched in card.get('notice_enriched', []):
-                jour = notice_enriched.get('journal_name', '')
-                if jour and jour not in ['', 'null', 'Unknown Journal']:
-                    journal = jour
-                    break
+        journal = card.get('journal_name', 'Unknown Journal')
+        if journal is None:
+            journal = 'Unknown Journal'
         
         hierarchy[publisher][journal].append(card)
     
-    return hierarchy
-
-def sort_hierarchy_by_notice_count(hierarchy: Dict) -> Dict:
-    """
-    Sort hierarchy levels by number of retraction notices (descending).
-    """
-    if not hierarchy:
-        return hierarchy
-    
+    # Sort by card count (descending)
     sorted_hierarchy = {}
     
-    # Sort top-level keys by notice count
-    top_level_items = []
-    for key, value in hierarchy.items():
-        if isinstance(value, dict):
-            # Count notices in this group
-            notice_count = 0
-            for sub_key, cards in value.items():
-                for card in cards:
-                    if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                        notice_count += len(card.get('notice_data', []))
-            top_level_items.append((key, value, notice_count))
-        else:
-            top_level_items.append((key, value, 0))
+    # Sort publishers by total card count
+    publisher_items = []
+    for publisher in hierarchy.keys():
+        total_count = sum(len(cards) for cards in hierarchy[publisher].values())
+        publisher_items.append((publisher, total_count))
+    publisher_items.sort(key=lambda x: x[1], reverse=True)
     
-    top_level_items.sort(key=lambda x: x[2], reverse=True)
-    
-    for key, value, _ in top_level_items:
-        if isinstance(value, dict):
-            # Sort second-level items by notice count
-            second_level_items = []
-            for sub_key, cards in value.items():
-                notice_count = 0
-                for card in cards:
-                    if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                        notice_count += len(card.get('notice_data', []))
-                second_level_items.append((sub_key, cards, notice_count))
-            second_level_items.sort(key=lambda x: x[2], reverse=True)
-            
-            sorted_hierarchy[key] = {
-                sub_key: cards for sub_key, cards, _ in second_level_items
-            }
-        else:
-            sorted_hierarchy[key] = value
+    for publisher, _ in publisher_items:
+        # Sort journals by card count
+        journal_items = []
+        for journal in hierarchy[publisher].keys():
+            journal_items.append((journal, len(hierarchy[publisher][journal])))
+        journal_items.sort(key=lambda x: x[1], reverse=True)
+        
+        sorted_hierarchy[publisher] = {}
+        for journal, _ in journal_items:
+            sorted_hierarchy[publisher][journal] = hierarchy[publisher][journal]
     
     return sorted_hierarchy
 
-def sort_author_groups_by_notice_count(author_groups: Dict[str, List[dict]]) -> Dict[str, List[dict]]:
-    """
-    Sort author groups by number of retraction notices (descending).
-    """
-    if not author_groups:
-        return author_groups
-    
-    items = []
-    for author_key, cards in author_groups.items():
-        notice_count = 0
-        for card in cards:
-            if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                notice_count += len(card.get('notice_data', []))
-        items.append((author_key, cards, notice_count))
-    
-    items.sort(key=lambda x: x[2], reverse=True)
-    
-    sorted_groups = {
-        item[0]: item[1] for item in items
-    }
-    
-    return sorted_groups
-
-def filter_empty_groups(hierarchy: Dict) -> Dict:
-    """
-    Remove groups that have 0 retraction notices.
-    """
-    if not hierarchy:
-        return hierarchy
-    
-    filtered_hierarchy = {}
-    
-    for key, value in hierarchy.items():
-        if isinstance(value, dict):
-            # Check if this group has any notices
-            has_notices = False
-            filtered_sub = {}
-            
-            for sub_key, cards in value.items():
-                notice_count = 0
-                for card in cards:
-                    if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                        notice_count += len(card.get('notice_data', []))
-                
-                if notice_count > 0:
-                    filtered_sub[sub_key] = cards
-                    has_notices = True
-            
-            if has_notices and filtered_sub:
-                filtered_hierarchy[key] = filtered_sub
-    
-    return filtered_hierarchy
-
-def filter_empty_author_groups(author_groups: Dict[str, List[dict]]) -> Dict[str, List[dict]]:
-    """
-    Remove author groups that have 0 retraction notices.
-    """
-    if not author_groups:
-        return author_groups
-    
-    filtered_groups = {}
-    
-    for author_key, cards in author_groups.items():
-        notice_count = 0
-        for card in cards:
-            if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                notice_count += len(card.get('notice_data', []))
-        
-        if notice_count > 0:
-            filtered_groups[author_key] = cards
-    
-    return filtered_groups
-
 # ============================================================================
-# PDF REPORT GENERATION FOR RETRACTION
+# PDF REPORT GENERATION FUNCTIONS FOR RETRACTION REPORTS
 # ============================================================================
 
 def register_russian_font():
@@ -1982,10 +2146,15 @@ def add_logo_to_pdf(story, logo_path, max_width=150, max_height=150, add_spacer=
         logger.warning(f"Could not load logo: {e}")
         return False
 
-def generate_retraction_pdf_by_country(journal_name: str, years: List[int],
-                                       hierarchy: Dict, logo_path: str = None,
-                                       report_title: str = "Retracted Articles by Country & Affiliation") -> bytes:
-    """Generate PDF report grouping retracted articles by Country -> Affiliation."""
+def generate_pdf_retraction_report_country_affiliation(
+    journal_name: str, 
+    years: List[int],
+    countries: List[str],
+    hierarchy: Dict[str, Dict[str, List[dict]]],
+    logo_path: str = None,
+    report_title: str = "Retraction Report by Country & Affiliation"
+) -> bytes:
+    """Generate PDF report grouping retraction cards by Country -> Affiliation."""
     russian_font_name = register_russian_font()
     
     buffer = io.BytesIO()
@@ -2042,8 +2211,8 @@ def generate_retraction_pdf_by_country(journal_name: str, years: List[int],
         fontName=russian_font_name
     )
     
-    article_title_style = ParagraphStyle(
-        'ArticleTitle',
+    card_title_style = ParagraphStyle(
+        'CardTitle',
         parent=styles['Normal'],
         fontSize=10,
         textColor=colors.HexColor('#2C3E50'),
@@ -2062,11 +2231,21 @@ def generate_retraction_pdf_by_country(journal_name: str, years: List[int],
         fontName=russian_font_name
     )
     
-    meta_style_default = ParagraphStyle(
-        'MetaDefault',
+    meta_style = ParagraphStyle(
+        'MetaStyle',
         parent=styles['Normal'],
         fontSize=8,
         textColor=colors.HexColor('#27ae60'),
+        spaceAfter=2,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
+    meta_style_retracted = ParagraphStyle(
+        'MetaRetracted',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#c0392b'),
         spaceAfter=2,
         leftIndent=40,
         fontName=russian_font_name
@@ -2077,16 +2256,6 @@ def generate_retraction_pdf_by_country(journal_name: str, years: List[int],
         parent=styles['Normal'],
         fontSize=8,
         textColor=colors.HexColor('#e74c3c'),
-        spaceAfter=2,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    citation_style = ParagraphStyle(
-        'CitationStyle',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#27AE60'),
         spaceAfter=2,
         leftIndent=40,
         fontName=russian_font_name
@@ -2152,18 +2321,14 @@ def generate_retraction_pdf_by_country(journal_name: str, years: List[int],
     
     story = []
     
-    # Count total cards and notices
-    total_cards = 0
-    total_notices = 0
-    for country, affiliations in hierarchy.items():
-        for affiliation, cards in affiliations.items():
-            total_cards += len(cards)
-            for card in cards:
-                if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                    total_notices += len(card.get('notice_data', []))
+    total_cards = sum(len(cards) for country in hierarchy.values() 
+                      for affiliation in country.values() 
+                      for cards in [affiliation])
+    total_countries = len(hierarchy)
     
     story.append(Spacer(1, 2*cm))
     
+    # Add logo at beginning
     add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
     
     story.append(Paragraph("Retraction Analysis Report", title_style))
@@ -2172,13 +2337,15 @@ def generate_retraction_pdf_by_country(journal_name: str, years: List[int],
     
     years_str = format_year_filter_for_filename(years)
     story.append(Paragraph(f"Publication period: {years_str}", subtitle_style))
+    countries_str = ', '.join([get_full_country_name(c) for c in countries]) if countries else 'All countries'
+    story.append(Paragraph(f"Selected countries: {countries_str}", subtitle_style))
     story.append(Spacer(1, 1.5*cm))
     
     intro_text = f"""
-    This report contains {total_cards} retracted articles/notices,
-    grouped by Country and Affiliation.
+    This report contains {total_cards} retraction cards grouped by Country and Affiliation.
     
-    Total retraction notices found: {total_notices}
+    Cards are sorted by the number of retractions (descending).
+    Each card represents either a retracted article, a retraction notice, or a combination of both.
     """
     
     story.append(Paragraph(intro_text, intro_style))
@@ -2186,10 +2353,11 @@ def generate_retraction_pdf_by_country(journal_name: str, years: List[int],
     
     stats_data = [
         ["Metric", "Value"],
-        ["Total Articles/Notices", str(total_cards)],
-        ["Retraction Notices", str(total_notices)],
-        ["Countries", str(len(hierarchy))],
-        ["Report Type", report_title]
+        ["Total Cards", str(total_cards)],
+        ["Countries", str(total_countries)],
+        ["Report Type", report_title],
+        ["Period", years_str],
+        ["Countries", countries_str]
     ]
     
     stats_table = Table(stats_data, colWidths=[doc.width/2.5, doc.width/3])
@@ -2212,21 +2380,14 @@ def generate_retraction_pdf_by_country(journal_name: str, years: List[int],
     story.append(Spacer(1, 0.5*cm))
     
     for country, affiliations in hierarchy.items():
-        country_notices = 0
-        for affiliation, cards in affiliations.items():
-            for card in cards:
-                if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                    country_notices += len(card.get('notice_data', []))
+        country_articles = sum(len(cards) for cards in affiliations.values())
         anchor_id = f"country_{hashlib.md5(country.encode('utf-8')).hexdigest()[:8]}"
-        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(country)}</b> — {country_notices} retraction notices</a>', toc_country_style))
+        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(country)}</b> — {country_articles} cards</a>', toc_country_style))
         
         for affiliation, cards in affiliations.items():
-            aff_notices = 0
-            for card in cards:
-                if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                    aff_notices += len(card.get('notice_data', []))
+            aff_count = len(cards)
             aff_anchor_id = f"affiliation_{hashlib.md5(f"{country}_{affiliation}".encode('utf-8')).hexdigest()[:8]}"
-            story.append(Paragraph(f'&nbsp;&nbsp;&nbsp;&nbsp;<a href="#{aff_anchor_id}">{clean_text(affiliation)}</a> — {aff_notices} retraction notices', toc_affiliation_style))
+            story.append(Paragraph(f'&nbsp;&nbsp;&nbsp;&nbsp;<a href="#{aff_anchor_id}">{clean_text(affiliation)}</a> — {aff_count} cards', toc_affiliation_style))
         
         story.append(Spacer(1, 0.3*cm))
     
@@ -2234,85 +2395,59 @@ def generate_retraction_pdf_by_country(journal_name: str, years: List[int],
     
     # Main content
     for country, affiliations in hierarchy.items():
-        country_notices = 0
-        for affiliation, cards in affiliations.items():
-            for card in cards:
-                if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                    country_notices += len(card.get('notice_data', []))
-        
+        country_articles = sum(len(cards) for cards in affiliations.values())
         anchor_id = f"country_{hashlib.md5(country.encode('utf-8')).hexdigest()[:8]}"
         anchor_para = Paragraph(f'<a name="{anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
         story.append(anchor_para)
         
-        story.append(Paragraph(f"{clean_text(country)} — {country_notices} retraction notices", country_style))
+        story.append(Paragraph(f"{clean_text(country)} — {country_articles} cards", country_style))
         story.append(Spacer(1, 0.3*cm))
         
         for affiliation, cards in affiliations.items():
-            aff_notices = 0
-            for card in cards:
-                if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                    aff_notices += len(card.get('notice_data', []))
-            
             aff_anchor_id = f"affiliation_{hashlib.md5(f"{country}_{affiliation}".encode('utf-8')).hexdigest()[:8]}"
             aff_anchor_para = Paragraph(f'<a name="{aff_anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
             story.append(aff_anchor_para)
             
-            story.append(Paragraph(f"&nbsp;&nbsp;{clean_text(affiliation)} — {aff_notices} retraction notices", affiliation_style))
+            story.append(Paragraph(f"&nbsp;&nbsp;{clean_text(affiliation)} — {len(cards)} cards", affiliation_style))
             story.append(Spacer(1, 0.2*cm))
             
             for idx, card in enumerate(cards, 1):
-                # Get enriched data
-                article_enriched = card.get('article_enriched')
-                notice_enriched_list = card.get('notice_enriched', [])
+                title = clean_text(card.get('title', 'No title'))
+                card_type_icon = card.get('card_type_icon', '📄')
+                card_type_label = card.get('card_type_label', 'Unknown')
                 
-                # Title - from article if available, else from notice
-                if article_enriched:
-                    title = clean_text(article_enriched.get('title', 'No title'))
-                else:
-                    title = clean_text(notice_enriched_list[0].get('title', 'No title')) if notice_enriched_list else 'No title'
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{idx}. {card_type_icon} {title}", card_title_style))
                 
-                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{idx}. {title}", article_title_style))
+                # Card type badge
+                if card_type_label == 'Retracted Article + Retraction Notice':
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='#c0392b'><b>⚠️🚫 {card_type_label}</b></font>", meta_style_retracted))
+                elif card_type_label == 'Retracted Article (No Notice)':
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='#c0392b'><b>🚫 {card_type_label}</b></font>", meta_style_retracted))
+                elif card_type_label == 'Retraction Notice (No Article)':
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='#e74c3c'><b>⚠️ {card_type_label}</b></font>", meta_style_notice))
                 
-                # Authors - from article if available
-                if article_enriched:
-                    authors = clean_text(article_enriched.get('authors', 'Authors not specified'))
-                else:
-                    authors = clean_text(notice_enriched_list[0].get('authors', 'Authors not specified')) if notice_enriched_list else 'Authors not specified'
-                
+                authors = clean_text(card.get('authors', 'Authors not specified'))
                 story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
                 
                 # Affiliations
-                if article_enriched:
-                    affs = clean_text(article_enriched.get('affiliations_str', ''))
-                else:
-                    affs = clean_text(notice_enriched_list[0].get('affiliations_str', '')) if notice_enriched_list else ''
-                
+                affs = clean_text(card.get('affiliations_str', ''))
                 if affs and affs != 'No affiliations specified':
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Affiliations:</b> {affs}", meta_style_default))
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Affiliations:</b> {affs}", meta_style))
                 
-                # Publication info
-                if article_enriched:
-                    journal_name_article = clean_text(article_enriched.get('journal_name', ''))
-                    year = article_enriched.get('publication_year', '')
-                    pub_date = article_enriched.get('publication_date', '')
-                    volume = article_enriched.get('volume', '')
-                    issue = article_enriched.get('issue', '')
-                    pages = article_enriched.get('pages', '')
-                    publisher = clean_text(article_enriched.get('publisher', ''))
-                else:
-                    journal_name_article = clean_text(notice_enriched_list[0].get('journal_name', '')) if notice_enriched_list else ''
-                    year = notice_enriched_list[0].get('publication_year', '') if notice_enriched_list else ''
-                    pub_date = notice_enriched_list[0].get('publication_date', '') if notice_enriched_list else ''
-                    volume = notice_enriched_list[0].get('volume', '') if notice_enriched_list else ''
-                    issue = notice_enriched_list[0].get('issue', '') if notice_enriched_list else ''
-                    pages = notice_enriched_list[0].get('pages', '') if notice_enriched_list else ''
-                    publisher = clean_text(notice_enriched_list[0].get('publisher', '')) if notice_enriched_list else ''
-                
+                # Journal and publisher
+                journal_name_article = clean_text(card.get('journal_name', ''))
                 if journal_name_article:
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Journal:</b> {journal_name_article}", meta_style_default))
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Journal:</b> {journal_name_article}", meta_style))
                 
+                publisher = clean_text(card.get('publisher', ''))
                 if publisher:
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Publisher:</b> {publisher}", meta_style_default))
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Publisher:</b> {publisher}", meta_style))
+                
+                year = card.get('publication_year', '')
+                pub_date = card.get('publication_date', '')
+                volume = card.get('volume', '')
+                issue = card.get('issue', '')
+                pages = card.get('pages', '')
                 
                 meta_parts = []
                 if year:
@@ -2327,47 +2462,32 @@ def generate_retraction_pdf_by_country(journal_name: str, years: List[int],
                     meta_parts.append(f"pp. {pages}")
                 
                 if meta_parts:
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(meta_parts)}", meta_style_default))
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(meta_parts)}", meta_style))
                 
-                # DOI - from article if available
-                if article_enriched:
-                    doi_url = article_enriched.get('doi_url', '')
-                    if doi_url:
-                        doi_url_clean = clean_doi_url(doi_url)
-                        story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Retracted Article DOI:</b> <a href='{doi_url_clean}'>{doi_url_clean}</a>", meta_style_default))
+                # DOI for article
+                doi_url = card.get('doi_url', '')
+                if doi_url:
+                    doi_url_clean = clean_doi_url(doi_url)
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Article DOI:</b> <a href='{doi_url_clean}'>{doi_url_clean}</a>", meta_style))
                 
-                # Retraction notice DOIs
-                for notice_enriched in notice_enriched_list:
-                    notice_doi_url = notice_enriched.get('doi_url', '')
-                    if notice_doi_url:
-                        notice_doi_clean = clean_doi_url(notice_doi_url)
-                        story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>🔴 Retraction Notice DOI:</b> <a href='{notice_doi_clean}'>{notice_doi_clean}</a>", meta_style_notice))
+                # Notice DOIs
+                notice_data = card.get('notice_data', [])
+                if notice_data:
+                    for notice_idx, notice in enumerate(notice_data, 1):
+                        notice_doi_url = notice.get('doi_url', '')
+                        if notice_doi_url:
+                            notice_doi_clean = clean_doi_url(notice_doi_url)
+                            notice_year = notice.get('year', '')
+                            story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Notice {notice_idx} DOI:</b> <a href='{notice_doi_clean}'>{notice_doi_clean}</a> (Year: {notice_year})", meta_style_notice))
                 
                 # Citations
-                if article_enriched:
-                    citations = article_enriched.get('cited_by_count', 0)
-                    citations_per_year = article_enriched.get('citations_per_year', 0)
-                else:
-                    citations = notice_enriched_list[0].get('cited_by_count', 0) if notice_enriched_list else 0
-                    citations_per_year = notice_enriched_list[0].get('citations_per_year', 0) if notice_enriched_list else 0
+                citations = card.get('cited_by_count', 0)
+                citations_per_year = card.get('citations_per_year', 0)
+                references = card.get('referenced_works_count', 0)
+                oa_status = card.get('oa_status', 'Closed Access')
                 
-                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Citations:</b> {citations} | <b>per year:</b> {citations_per_year:.1f}", citation_style))
-                
-                # Type badge
-                if article_enriched:
-                    type_label = article_enriched.get('type_label', '')
-                    type_icon = article_enriched.get('type_icon', '')
-                    type_color = article_enriched.get('type_color', '')
-                else:
-                    type_label = notice_enriched_list[0].get('type_label', '') if notice_enriched_list else ''
-                    type_icon = notice_enriched_list[0].get('type_icon', '') if notice_enriched_list else ''
-                    type_color = notice_enriched_list[0].get('type_color', '') if notice_enriched_list else ''
-                
-                if type_label:
-                    story.append(Paragraph(
-                        f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='{type_color}'><b>{type_icon} {type_label}</b></font>",
-                        meta_style_default
-                    ))
+                citation_text = f"<b>Citations:</b> {citations} | <b>per year:</b> {citations_per_year:.1f} | <b>References:</b> {references} | <b>OA:</b> {oa_status}"
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{citation_text}", meta_style))
                 
                 story.append(Spacer(1, 0.15*cm))
                 
@@ -2380,32 +2500,38 @@ def generate_retraction_pdf_by_country(journal_name: str, years: List[int],
         story.append(Spacer(1, 0.3*cm))
         story.append(PageBreak())
     
+    # Conclusion
     story.append(Paragraph("Conclusion", title_style))
     story.append(Spacer(1, 0.5*cm))
     
     conclusion_text = f"""
-    This report contains {total_cards} retracted articles/notices,
-    grouped by {len(hierarchy)} countries and their respective affiliations.
+    This report contains {total_cards} retraction cards grouped by {total_countries} countries and their respective affiliations.
     
-    Total retraction notices found: {total_notices}
+    The cards are organized by the number of retractions (descending) within each level.
+    Each card represents a retracted article, a retraction notice, or a combination of both when available.
     """
     
     story.append(Paragraph(conclusion_text, conclusion_style))
     story.append(Spacer(1, 1*cm))
     
+    # Add logo at end
     add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
     
-    story.append(Paragraph(f"© Retraction Detector Pro | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
-    story.append(Paragraph("Report generated using Retraction Article Detector Pro", footer_style))
+    story.append(Paragraph(f"© Chimica Techno Acta | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
+    story.append(Paragraph("Report generated using CTA Retraction Article Detector Pro*2", footer_style))
     
     doc.build(story)
     return buffer.getvalue()
 
-def generate_retraction_pdf_by_author(journal_name: str, years: List[int],
-                                     author_groups: Dict[str, List[dict]], 
-                                     logo_path: str = None,
-                                     report_title: str = "Retracted Articles by Author") -> bytes:
-    """Generate PDF report grouping retracted articles by author."""
+def generate_pdf_retraction_report_author(
+    journal_name: str,
+    years: List[int],
+    countries: List[str],
+    author_cards: Dict[str, List[dict]],
+    logo_path: str = None,
+    report_title: str = "Retraction Report by Author"
+) -> bytes:
+    """Generate PDF report grouping retraction cards by author."""
     russian_font_name = register_russian_font()
     
     buffer = io.BytesIO()
@@ -2451,13 +2577,13 @@ def generate_retraction_pdf_by_author(journal_name: str, years: List[int],
         fontName=russian_font_name
     )
     
-    article_title_style = ParagraphStyle(
-        'ArticleTitle',
+    card_title_style = ParagraphStyle(
+        'CardTitle',
         parent=styles['Normal'],
         fontSize=10,
         textColor=colors.HexColor('#2C3E50'),
         spaceAfter=5,
-        leftIndent=20,
+        leftIndent=40,
         fontName=russian_font_name
     )
     
@@ -2467,17 +2593,27 @@ def generate_retraction_pdf_by_author(journal_name: str, years: List[int],
         fontSize=9,
         textColor=colors.HexColor('#2C3E50'),
         spaceAfter=3,
-        leftIndent=20,
+        leftIndent=40,
         fontName=russian_font_name
     )
     
-    meta_style_default = ParagraphStyle(
-        'MetaDefault',
+    meta_style = ParagraphStyle(
+        'MetaStyle',
         parent=styles['Normal'],
         fontSize=8,
         textColor=colors.HexColor('#27ae60'),
         spaceAfter=2,
-        leftIndent=20,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
+    meta_style_retracted = ParagraphStyle(
+        'MetaRetracted',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#c0392b'),
+        spaceAfter=2,
+        leftIndent=40,
         fontName=russian_font_name
     )
     
@@ -2487,17 +2623,16 @@ def generate_retraction_pdf_by_author(journal_name: str, years: List[int],
         fontSize=8,
         textColor=colors.HexColor('#e74c3c'),
         spaceAfter=2,
-        leftIndent=20,
+        leftIndent=40,
         fontName=russian_font_name
     )
     
-    citation_style = ParagraphStyle(
-        'CitationStyle',
+    toc_author_style = ParagraphStyle(
+        'TOCAuthorStyle',
         parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#27AE60'),
-        spaceAfter=2,
-        leftIndent=20,
+        fontSize=12,
+        textColor=colors.HexColor('#667eea'),
+        spaceAfter=6,
         fontName=russian_font_name
     )
     
@@ -2542,16 +2677,12 @@ def generate_retraction_pdf_by_author(journal_name: str, years: List[int],
     
     story = []
     
-    total_cards = 0
-    total_notices = 0
-    for author_key, cards in author_groups.items():
-        total_cards += len(cards)
-        for card in cards:
-            if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                total_notices += len(card.get('notice_data', []))
+    total_cards = sum(len(cards) for cards in author_cards.values())
+    total_authors = len(author_cards)
     
     story.append(Spacer(1, 2*cm))
     
+    # Add logo at beginning
     add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
     
     story.append(Paragraph("Retraction Analysis Report", title_style))
@@ -2560,13 +2691,16 @@ def generate_retraction_pdf_by_author(journal_name: str, years: List[int],
     
     years_str = format_year_filter_for_filename(years)
     story.append(Paragraph(f"Publication period: {years_str}", subtitle_style))
+    countries_str = ', '.join([get_full_country_name(c) for c in countries]) if countries else 'All countries'
+    story.append(Paragraph(f"Selected countries: {countries_str}", subtitle_style))
     story.append(Spacer(1, 1.5*cm))
     
     intro_text = f"""
-    This report contains {total_cards} retracted articles/notices,
-    grouped by author (last name, first initial).
+    This report contains {total_cards} retraction cards grouped by Author.
     
-    Total retraction notices found: {total_notices}
+    Cards are sorted by the number of retractions per author (descending).
+    Each card represents either a retracted article, a retraction notice, or a combination of both.
+    Only authors from selected countries are included.
     """
     
     story.append(Paragraph(intro_text, intro_style))
@@ -2574,10 +2708,11 @@ def generate_retraction_pdf_by_author(journal_name: str, years: List[int],
     
     stats_data = [
         ["Metric", "Value"],
-        ["Total Articles/Notices", str(total_cards)],
-        ["Retraction Notices", str(total_notices)],
-        ["Unique Authors", str(len(author_groups))],
-        ["Report Type", report_title]
+        ["Total Cards", str(total_cards)],
+        ["Authors", str(total_authors)],
+        ["Report Type", report_title],
+        ["Period", years_str],
+        ["Countries", countries_str]
     ]
     
     stats_table = Table(stats_data, colWidths=[doc.width/2.5, doc.width/3])
@@ -2595,51 +2730,62 @@ def generate_retraction_pdf_by_author(journal_name: str, years: List[int],
     story.append(stats_table)
     story.append(PageBreak())
     
+    # Table of Contents
+    story.append(Paragraph("Table of Contents", title_style))
+    story.append(Spacer(1, 0.5*cm))
+    
+    for author, cards in author_cards.items():
+        anchor_id = f"author_{hashlib.md5(author.encode('utf-8')).hexdigest()[:8]}"
+        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(author)}</b> — {len(cards)} cards</a>', toc_author_style))
+    
+    story.append(PageBreak())
+    
     # Main content
-    for author_key, cards in author_groups.items():
-        author_notices = 0
-        for card in cards:
-            if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                author_notices += len(card.get('notice_data', []))
+    for author, cards in author_cards.items():
+        anchor_id = f"author_{hashlib.md5(author.encode('utf-8')).hexdigest()[:8]}"
+        anchor_para = Paragraph(f'<a name="{anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
+        story.append(anchor_para)
         
-        story.append(Paragraph(f"{clean_text(author_key)} — {author_notices} retraction notices", author_style))
+        story.append(Paragraph(f"{clean_text(author)} — {len(cards)} cards", author_style))
         story.append(Spacer(1, 0.3*cm))
         
         for idx, card in enumerate(cards, 1):
-            article_enriched = card.get('article_enriched')
-            notice_enriched_list = card.get('notice_enriched', [])
+            title = clean_text(card.get('title', 'No title'))
+            card_type_icon = card.get('card_type_icon', '📄')
+            card_type_label = card.get('card_type_label', 'Unknown')
             
-            if article_enriched:
-                title = clean_text(article_enriched.get('title', 'No title'))
-            else:
-                title = clean_text(notice_enriched_list[0].get('title', 'No title')) if notice_enriched_list else 'No title'
+            story.append(Paragraph(f"&nbsp;&nbsp;{idx}. {card_type_icon} {title}", card_title_style))
             
-            story.append(Paragraph(f"{idx}. {title}", article_title_style))
+            # Card type badge
+            if card_type_label == 'Retracted Article + Retraction Notice':
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='#c0392b'><b>⚠️🚫 {card_type_label}</b></font>", meta_style_retracted))
+            elif card_type_label == 'Retracted Article (No Notice)':
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='#c0392b'><b>🚫 {card_type_label}</b></font>", meta_style_retracted))
+            elif card_type_label == 'Retraction Notice (No Article)':
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='#e74c3c'><b>⚠️ {card_type_label}</b></font>", meta_style_notice))
             
-            if article_enriched:
-                authors = clean_text(article_enriched.get('authors', 'Authors not specified'))
-            else:
-                authors = clean_text(notice_enriched_list[0].get('authors', 'Authors not specified')) if notice_enriched_list else 'Authors not specified'
+            authors = clean_text(card.get('authors', 'Authors not specified'))
+            story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>All Authors:</b> {authors}", authors_style))
             
-            story.append(Paragraph(f"<b>Authors:</b> {authors}", authors_style))
+            # Affiliations
+            affs = clean_text(card.get('affiliations_str', ''))
+            if affs and affs != 'No affiliations specified':
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Affiliations:</b> {affs}", meta_style))
             
-            if article_enriched:
-                journal_name_article = clean_text(article_enriched.get('journal_name', ''))
-                year = article_enriched.get('publication_year', '')
-                pub_date = article_enriched.get('publication_date', '')
-                volume = article_enriched.get('volume', '')
-                issue = article_enriched.get('issue', '')
-                pages = article_enriched.get('pages', '')
-            else:
-                journal_name_article = clean_text(notice_enriched_list[0].get('journal_name', '')) if notice_enriched_list else ''
-                year = notice_enriched_list[0].get('publication_year', '') if notice_enriched_list else ''
-                pub_date = notice_enriched_list[0].get('publication_date', '') if notice_enriched_list else ''
-                volume = notice_enriched_list[0].get('volume', '') if notice_enriched_list else ''
-                issue = notice_enriched_list[0].get('issue', '') if notice_enriched_list else ''
-                pages = notice_enriched_list[0].get('pages', '') if notice_enriched_list else ''
-            
+            # Journal and publisher
+            journal_name_article = clean_text(card.get('journal_name', ''))
             if journal_name_article:
-                story.append(Paragraph(f"<b>Journal:</b> {journal_name_article}", meta_style_default))
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Journal:</b> {journal_name_article}", meta_style))
+            
+            publisher = clean_text(card.get('publisher', ''))
+            if publisher:
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Publisher:</b> {publisher}", meta_style))
+            
+            year = card.get('publication_year', '')
+            pub_date = card.get('publication_date', '')
+            volume = card.get('volume', '')
+            issue = card.get('issue', '')
+            pages = card.get('pages', '')
             
             meta_parts = []
             if year:
@@ -2654,63 +2800,75 @@ def generate_retraction_pdf_by_author(journal_name: str, years: List[int],
                 meta_parts.append(f"pp. {pages}")
             
             if meta_parts:
-                story.append(Paragraph(f"{', '.join(meta_parts)}", meta_style_default))
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(meta_parts)}", meta_style))
             
-            if article_enriched:
-                doi_url = article_enriched.get('doi_url', '')
-                if doi_url:
-                    doi_url_clean = clean_doi_url(doi_url)
-                    story.append(Paragraph(f"<b>Retracted Article DOI:</b> <a href='{doi_url_clean}'>{doi_url_clean}</a>", meta_style_default))
+            # DOI for article
+            doi_url = card.get('doi_url', '')
+            if doi_url:
+                doi_url_clean = clean_doi_url(doi_url)
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Article DOI:</b> <a href='{doi_url_clean}'>{doi_url_clean}</a>", meta_style))
             
-            for notice_enriched in notice_enriched_list:
-                notice_doi_url = notice_enriched.get('doi_url', '')
-                if notice_doi_url:
-                    notice_doi_clean = clean_doi_url(notice_doi_url)
-                    story.append(Paragraph(f"<b>🔴 Retraction Notice DOI:</b> <a href='{notice_doi_clean}'>{notice_doi_clean}</a>", meta_style_notice))
+            # Notice DOIs
+            notice_data = card.get('notice_data', [])
+            if notice_data:
+                for notice_idx, notice in enumerate(notice_data, 1):
+                    notice_doi_url = notice.get('doi_url', '')
+                    if notice_doi_url:
+                        notice_doi_clean = clean_doi_url(notice_doi_url)
+                        notice_year = notice.get('year', '')
+                        story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Notice {notice_idx} DOI:</b> <a href='{notice_doi_clean}'>{notice_doi_clean}</a> (Year: {notice_year})", meta_style_notice))
             
-            if article_enriched:
-                citations = article_enriched.get('cited_by_count', 0)
-                citations_per_year = article_enriched.get('citations_per_year', 0)
-            else:
-                citations = notice_enriched_list[0].get('cited_by_count', 0) if notice_enriched_list else 0
-                citations_per_year = notice_enriched_list[0].get('citations_per_year', 0) if notice_enriched_list else 0
+            # Citations
+            citations = card.get('cited_by_count', 0)
+            citations_per_year = card.get('citations_per_year', 0)
+            references = card.get('referenced_works_count', 0)
+            oa_status = card.get('oa_status', 'Closed Access')
             
-            story.append(Paragraph(f"<b>Citations:</b> {citations} | <b>per year:</b> {citations_per_year:.1f}", citation_style))
+            citation_text = f"<b>Citations:</b> {citations} | <b>per year:</b> {citations_per_year:.1f} | <b>References:</b> {references} | <b>OA:</b> {oa_status}"
+            story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{citation_text}", meta_style))
             
             story.append(Spacer(1, 0.15*cm))
             
             if idx < len(cards):
-                story.append(Paragraph("─" * 60, separator_style))
+                story.append(Paragraph("&nbsp;&nbsp;" + "─" * 40, separator_style))
                 story.append(Spacer(1, 0.1*cm))
         
         story.append(Spacer(1, 0.3*cm))
         story.append(PageBreak())
     
+    # Conclusion
     story.append(Paragraph("Conclusion", title_style))
     story.append(Spacer(1, 0.5*cm))
     
     conclusion_text = f"""
-    This report contains {total_cards} retracted articles/notices,
-    grouped by {len(author_groups)} unique authors.
+    This report contains {total_cards} retraction cards grouped by {total_authors} authors.
     
-    Total retraction notices found: {total_notices}
+    The cards are organized by the number of retractions per author (descending).
+    Each card represents a retracted article, a retraction notice, or a combination of both when available.
+    Only authors from selected countries are included.
     """
     
     story.append(Paragraph(conclusion_text, conclusion_style))
     story.append(Spacer(1, 1*cm))
     
+    # Add logo at end
     add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
     
-    story.append(Paragraph(f"© Retraction Detector Pro | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
-    story.append(Paragraph("Report generated using Retraction Article Detector Pro", footer_style))
+    story.append(Paragraph(f"© Chimica Techno Acta | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
+    story.append(Paragraph("Report generated using CTA Retraction Article Detector Pro*2", footer_style))
     
     doc.build(story)
     return buffer.getvalue()
 
-def generate_retraction_pdf_by_publisher(journal_name: str, years: List[int],
-                                        hierarchy: Dict, logo_path: str = None,
-                                        report_title: str = "Retracted Articles by Publisher & Journal") -> bytes:
-    """Generate PDF report grouping retracted articles by Publisher -> Journal."""
+def generate_pdf_retraction_report_publisher_journal(
+    journal_name: str,
+    years: List[int],
+    countries: List[str],
+    hierarchy: Dict[str, Dict[str, List[dict]]],
+    logo_path: str = None,
+    report_title: str = "Retraction Report by Publisher & Journal"
+) -> bytes:
+    """Generate PDF report grouping retraction cards by Publisher -> Journal."""
     russian_font_name = register_russian_font()
     
     buffer = io.BytesIO()
@@ -2767,8 +2925,8 @@ def generate_retraction_pdf_by_publisher(journal_name: str, years: List[int],
         fontName=russian_font_name
     )
     
-    article_title_style = ParagraphStyle(
-        'ArticleTitle',
+    card_title_style = ParagraphStyle(
+        'CardTitle',
         parent=styles['Normal'],
         fontSize=10,
         textColor=colors.HexColor('#2C3E50'),
@@ -2787,11 +2945,21 @@ def generate_retraction_pdf_by_publisher(journal_name: str, years: List[int],
         fontName=russian_font_name
     )
     
-    meta_style_default = ParagraphStyle(
-        'MetaDefault',
+    meta_style = ParagraphStyle(
+        'MetaStyle',
         parent=styles['Normal'],
         fontSize=8,
         textColor=colors.HexColor('#27ae60'),
+        spaceAfter=2,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
+    meta_style_retracted = ParagraphStyle(
+        'MetaRetracted',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#c0392b'),
         spaceAfter=2,
         leftIndent=40,
         fontName=russian_font_name
@@ -2802,16 +2970,6 @@ def generate_retraction_pdf_by_publisher(journal_name: str, years: List[int],
         parent=styles['Normal'],
         fontSize=8,
         textColor=colors.HexColor('#e74c3c'),
-        spaceAfter=2,
-        leftIndent=40,
-        fontName=russian_font_name
-    )
-    
-    citation_style = ParagraphStyle(
-        'CitationStyle',
-        parent=styles['Normal'],
-        fontSize=9,
-        textColor=colors.HexColor('#27AE60'),
         spaceAfter=2,
         leftIndent=40,
         fontName=russian_font_name
@@ -2877,17 +3035,14 @@ def generate_retraction_pdf_by_publisher(journal_name: str, years: List[int],
     
     story = []
     
-    total_cards = 0
-    total_notices = 0
-    for publisher, journals in hierarchy.items():
-        for journal, cards in journals.items():
-            total_cards += len(cards)
-            for card in cards:
-                if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                    total_notices += len(card.get('notice_data', []))
+    total_cards = sum(len(cards) for publisher in hierarchy.values() 
+                      for journal in publisher.values() 
+                      for cards in [journal])
+    total_publishers = len(hierarchy)
     
     story.append(Spacer(1, 2*cm))
     
+    # Add logo at beginning
     add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
     
     story.append(Paragraph("Retraction Analysis Report", title_style))
@@ -2896,13 +3051,15 @@ def generate_retraction_pdf_by_publisher(journal_name: str, years: List[int],
     
     years_str = format_year_filter_for_filename(years)
     story.append(Paragraph(f"Publication period: {years_str}", subtitle_style))
+    countries_str = ', '.join([get_full_country_name(c) for c in countries]) if countries else 'All countries'
+    story.append(Paragraph(f"Selected countries: {countries_str}", subtitle_style))
     story.append(Spacer(1, 1.5*cm))
     
     intro_text = f"""
-    This report contains {total_cards} retracted articles/notices,
-    grouped by Publisher and Journal.
+    This report contains {total_cards} retraction cards grouped by Publisher and Journal.
     
-    Total retraction notices found: {total_notices}
+    Cards are sorted by the number of retractions (descending).
+    Each card represents either a retracted article, a retraction notice, or a combination of both.
     """
     
     story.append(Paragraph(intro_text, intro_style))
@@ -2910,10 +3067,11 @@ def generate_retraction_pdf_by_publisher(journal_name: str, years: List[int],
     
     stats_data = [
         ["Metric", "Value"],
-        ["Total Articles/Notices", str(total_cards)],
-        ["Retraction Notices", str(total_notices)],
-        ["Publishers", str(len(hierarchy))],
-        ["Report Type", report_title]
+        ["Total Cards", str(total_cards)],
+        ["Publishers", str(total_publishers)],
+        ["Report Type", report_title],
+        ["Period", years_str],
+        ["Countries", countries_str]
     ]
     
     stats_table = Table(stats_data, colWidths=[doc.width/2.5, doc.width/3])
@@ -2936,21 +3094,14 @@ def generate_retraction_pdf_by_publisher(journal_name: str, years: List[int],
     story.append(Spacer(1, 0.5*cm))
     
     for publisher, journals in hierarchy.items():
-        publisher_notices = 0
-        for journal, cards in journals.items():
-            for card in cards:
-                if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                    publisher_notices += len(card.get('notice_data', []))
+        publisher_articles = sum(len(cards) for cards in journals.values())
         anchor_id = f"publisher_{hashlib.md5(publisher.encode('utf-8')).hexdigest()[:8]}"
-        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(publisher)}</b> — {publisher_notices} retraction notices</a>', toc_publisher_style))
+        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(publisher)}</b> — {publisher_articles} cards</a>', toc_publisher_style))
         
         for journal, cards in journals.items():
-            journal_notices = 0
-            for card in cards:
-                if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                    journal_notices += len(card.get('notice_data', []))
+            journal_count = len(cards)
             journal_anchor_id = f"journal_{hashlib.md5(f"{publisher}_{journal}".encode('utf-8')).hexdigest()[:8]}"
-            story.append(Paragraph(f'&nbsp;&nbsp;&nbsp;&nbsp;<a href="#{journal_anchor_id}">{clean_text(journal)}</a> — {journal_notices} retraction notices', toc_journal_style))
+            story.append(Paragraph(f'&nbsp;&nbsp;&nbsp;&nbsp;<a href="#{journal_anchor_id}">{clean_text(journal)}</a> — {journal_count} cards', toc_journal_style))
         
         story.append(Spacer(1, 0.3*cm))
     
@@ -2958,64 +3109,59 @@ def generate_retraction_pdf_by_publisher(journal_name: str, years: List[int],
     
     # Main content
     for publisher, journals in hierarchy.items():
-        publisher_notices = 0
-        for journal, cards in journals.items():
-            for card in cards:
-                if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                    publisher_notices += len(card.get('notice_data', []))
-        
+        publisher_articles = sum(len(cards) for cards in journals.values())
         anchor_id = f"publisher_{hashlib.md5(publisher.encode('utf-8')).hexdigest()[:8]}"
         anchor_para = Paragraph(f'<a name="{anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
         story.append(anchor_para)
         
-        story.append(Paragraph(f"{clean_text(publisher)} — {publisher_notices} retraction notices", publisher_style))
+        story.append(Paragraph(f"{clean_text(publisher)} — {publisher_articles} cards", publisher_style))
         story.append(Spacer(1, 0.3*cm))
         
         for journal, cards in journals.items():
-            journal_notices = 0
-            for card in cards:
-                if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-                    journal_notices += len(card.get('notice_data', []))
-            
             journal_anchor_id = f"journal_{hashlib.md5(f"{publisher}_{journal}".encode('utf-8')).hexdigest()[:8]}"
             journal_anchor_para = Paragraph(f'<a name="{journal_anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
             story.append(journal_anchor_para)
             
-            story.append(Paragraph(f"&nbsp;&nbsp;{clean_text(journal)} — {journal_notices} retraction notices", journal_style))
+            story.append(Paragraph(f"&nbsp;&nbsp;{clean_text(journal)} — {len(cards)} cards", journal_style))
             story.append(Spacer(1, 0.2*cm))
             
             for idx, card in enumerate(cards, 1):
-                article_enriched = card.get('article_enriched')
-                notice_enriched_list = card.get('notice_enriched', [])
+                title = clean_text(card.get('title', 'No title'))
+                card_type_icon = card.get('card_type_icon', '📄')
+                card_type_label = card.get('card_type_label', 'Unknown')
                 
-                if article_enriched:
-                    title = clean_text(article_enriched.get('title', 'No title'))
-                else:
-                    title = clean_text(notice_enriched_list[0].get('title', 'No title')) if notice_enriched_list else 'No title'
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{idx}. {card_type_icon} {title}", card_title_style))
                 
-                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{idx}. {title}", article_title_style))
+                # Card type badge
+                if card_type_label == 'Retracted Article + Retraction Notice':
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='#c0392b'><b>⚠️🚫 {card_type_label}</b></font>", meta_style_retracted))
+                elif card_type_label == 'Retracted Article (No Notice)':
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='#c0392b'><b>🚫 {card_type_label}</b></font>", meta_style_retracted))
+                elif card_type_label == 'Retraction Notice (No Article)':
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<font color='#e74c3c'><b>⚠️ {card_type_label}</b></font>", meta_style_notice))
                 
-                if article_enriched:
-                    authors = clean_text(article_enriched.get('authors', 'Authors not specified'))
-                else:
-                    authors = clean_text(notice_enriched_list[0].get('authors', 'Authors not specified')) if notice_enriched_list else 'Authors not specified'
-                
+                authors = clean_text(card.get('authors', 'Authors not specified'))
                 story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
                 
-                if article_enriched:
-                    journal_name_article = clean_text(article_enriched.get('journal_name', ''))
-                    year = article_enriched.get('publication_year', '')
-                    pub_date = article_enriched.get('publication_date', '')
-                    volume = article_enriched.get('volume', '')
-                    issue = article_enriched.get('issue', '')
-                    pages = article_enriched.get('pages', '')
-                else:
-                    journal_name_article = clean_text(notice_enriched_list[0].get('journal_name', '')) if notice_enriched_list else ''
-                    year = notice_enriched_list[0].get('publication_year', '') if notice_enriched_list else ''
-                    pub_date = notice_enriched_list[0].get('publication_date', '') if notice_enriched_list else ''
-                    volume = notice_enriched_list[0].get('volume', '') if notice_enriched_list else ''
-                    issue = notice_enriched_list[0].get('issue', '') if notice_enriched_list else ''
-                    pages = notice_enriched_list[0].get('pages', '') if notice_enriched_list else ''
+                # Affiliations
+                affs = clean_text(card.get('affiliations_str', ''))
+                if affs and affs != 'No affiliations specified':
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Affiliations:</b> {affs}", meta_style))
+                
+                # Journal and publisher
+                journal_name_article = clean_text(card.get('journal_name', ''))
+                if journal_name_article:
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Journal:</b> {journal_name_article}", meta_style))
+                
+                publisher_name = clean_text(card.get('publisher', ''))
+                if publisher_name:
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Publisher:</b> {publisher_name}", meta_style))
+                
+                year = card.get('publication_year', '')
+                pub_date = card.get('publication_date', '')
+                volume = card.get('volume', '')
+                issue = card.get('issue', '')
+                pages = card.get('pages', '')
                 
                 meta_parts = []
                 if year:
@@ -3030,28 +3176,32 @@ def generate_retraction_pdf_by_publisher(journal_name: str, years: List[int],
                     meta_parts.append(f"pp. {pages}")
                 
                 if meta_parts:
-                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(meta_parts)}", meta_style_default))
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{', '.join(meta_parts)}", meta_style))
                 
-                if article_enriched:
-                    doi_url = article_enriched.get('doi_url', '')
-                    if doi_url:
-                        doi_url_clean = clean_doi_url(doi_url)
-                        story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Retracted Article DOI:</b> <a href='{doi_url_clean}'>{doi_url_clean}</a>", meta_style_default))
+                # DOI for article
+                doi_url = card.get('doi_url', '')
+                if doi_url:
+                    doi_url_clean = clean_doi_url(doi_url)
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Article DOI:</b> <a href='{doi_url_clean}'>{doi_url_clean}</a>", meta_style))
                 
-                for notice_enriched in notice_enriched_list:
-                    notice_doi_url = notice_enriched.get('doi_url', '')
-                    if notice_doi_url:
-                        notice_doi_clean = clean_doi_url(notice_doi_url)
-                        story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>🔴 Retraction Notice DOI:</b> <a href='{notice_doi_clean}'>{notice_doi_clean}</a>", meta_style_notice))
+                # Notice DOIs
+                notice_data = card.get('notice_data', [])
+                if notice_data:
+                    for notice_idx, notice in enumerate(notice_data, 1):
+                        notice_doi_url = notice.get('doi_url', '')
+                        if notice_doi_url:
+                            notice_doi_clean = clean_doi_url(notice_doi_url)
+                            notice_year = notice.get('year', '')
+                            story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Notice {notice_idx} DOI:</b> <a href='{notice_doi_clean}'>{notice_doi_clean}</a> (Year: {notice_year})", meta_style_notice))
                 
-                if article_enriched:
-                    citations = article_enriched.get('cited_by_count', 0)
-                    citations_per_year = article_enriched.get('citations_per_year', 0)
-                else:
-                    citations = notice_enriched_list[0].get('cited_by_count', 0) if notice_enriched_list else 0
-                    citations_per_year = notice_enriched_list[0].get('citations_per_year', 0) if notice_enriched_list else 0
+                # Citations
+                citations = card.get('cited_by_count', 0)
+                citations_per_year = card.get('citations_per_year', 0)
+                references = card.get('referenced_works_count', 0)
+                oa_status = card.get('oa_status', 'Closed Access')
                 
-                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Citations:</b> {citations} | <b>per year:</b> {citations_per_year:.1f}", citation_style))
+                citation_text = f"<b>Citations:</b> {citations} | <b>per year:</b> {citations_per_year:.1f} | <b>References:</b> {references} | <b>OA:</b> {oa_status}"
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;{citation_text}", meta_style))
                 
                 story.append(Spacer(1, 0.15*cm))
                 
@@ -3064,23 +3214,25 @@ def generate_retraction_pdf_by_publisher(journal_name: str, years: List[int],
         story.append(Spacer(1, 0.3*cm))
         story.append(PageBreak())
     
+    # Conclusion
     story.append(Paragraph("Conclusion", title_style))
     story.append(Spacer(1, 0.5*cm))
     
     conclusion_text = f"""
-    This report contains {total_cards} retracted articles/notices,
-    grouped by {len(hierarchy)} publishers and their respective journals.
+    This report contains {total_cards} retraction cards grouped by {total_publishers} publishers and their respective journals.
     
-    Total retraction notices found: {total_notices}
+    The cards are organized by the number of retractions (descending) within each level.
+    Each card represents a retracted article, a retraction notice, or a combination of both when available.
     """
     
     story.append(Paragraph(conclusion_text, conclusion_style))
     story.append(Spacer(1, 1*cm))
     
+    # Add logo at end
     add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
     
-    story.append(Paragraph(f"© Retraction Detector Pro | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
-    story.append(Paragraph("Report generated using Retraction Article Detector Pro", footer_style))
+    story.append(Paragraph(f"© Chimica Techno Acta | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
+    story.append(Paragraph("Report generated using CTA Retraction Article Detector Pro*2", footer_style))
     
     doc.build(story)
     return buffer.getvalue()
@@ -3114,25 +3266,28 @@ def generate_journal_abbreviation(journal_name: str) -> str:
     return abbreviation if abbreviation else "JOURNAL"
 
 # ============================================================================
-# UI STEPS FOR RETRACTION DETECTION
+# UI STEPS
 # ============================================================================
 
-def step_parameters():
-    """Step 1: Enter parameters (years and countries)"""
+def step_retraction_parameters():
+    """Step 1: Input retraction search parameters"""
     st.markdown("""
     <div class="step-card">
-        <h3 style="margin: 0; font-size: 1.3rem;">📥 Step 1: Set Analysis Parameters</h3>
-        <p style="margin: 5px 0; font-size: 0.9rem;">Enter publication years and countries to analyze retracted articles.</p>
+        <h3 style="margin: 0; font-size: 1.3rem;">📥 Step 1: Search Parameters</h3>
+        <p style="margin: 5px 0; font-size: 0.9rem;">Enter publication years and countries to search for retracted articles.</p>
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown("""
     <div class="filter-section" style="background: rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(102, 126, 234, 0.2);">
+        <div class="filter-header" style="font-size: 1.1rem; font-weight: 600; color: #495057; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+            📅 Publication Years
+        </div>
     """, unsafe_allow_html=True)
     
     st.markdown("""
     <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
-        <strong>Supported year formats:</strong>
+        <strong>Supported formats:</strong>
     </div>
     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
         <span style="background: #e3f2fd; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">2000</span>
@@ -3152,10 +3307,11 @@ def step_parameters():
         help="Enter years in any format: single year (2020), range (2010-2020), or combination (2015,2018-2020,2022)"
     )
     
+    st.markdown("</div>", unsafe_allow_html=True)
+    
     if years_input:
         years = parse_year_filter(years_input)
         if years:
-            years_str = format_year_filter_for_filename(years)
             st.markdown(f"""
             <div style="background: #e8f5e9; border-radius: 8px; padding: 12px; border-left: 4px solid #4CAF50; margin: 10px 0;">
                 <strong>✅ Selected years:</strong> {', '.join(map(str, years))}
@@ -3171,47 +3327,58 @@ def step_parameters():
             """, unsafe_allow_html=True)
     
     st.markdown("""
-    <div style="font-size: 0.9rem; color: #666; margin: 15px 0 10px 0;">
-        <strong>Country codes (separate with +):</strong>
+    <div class="filter-section" style="background: rgba(255, 255, 255, 0.9); border-radius: 20px; padding: 20px; margin-top: 20px; border: 1px solid rgba(102, 126, 234, 0.2);">
+        <div class="filter-header" style="font-size: 1.1rem; font-weight: 600; color: #495057; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #667eea;">
+            🌍 Countries
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
+        <strong>Supported formats:</strong>
     </div>
     <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-        <span style="background: #e8f5e9; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">RU</span>
-        <span style="background: #e8f5e9; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">US</span>
-        <span style="background: #e8f5e9; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">IT</span>
-        <span style="background: #e8f5e9; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">CN</span>
-        <span style="background: #e8f5e9; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">GB</span>
-        <span style="background: #e8f5e9; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">DE</span>
+        <span style="background: #e3f2fd; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">RU</span>
+        <span style="background: #e3f2fd; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem;">IT</span>
+        <span style="background: #fff3e0; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; border: 1px dashed #ff9800;">RU+IT</span>
         <span style="background: #fff3e0; padding: 4px 12px; border-radius: 16px; font-size: 0.8rem; border: 1px dashed #ff9800;">IT+RU+CN</span>
+    </div>
+    <div style="font-size: 0.85rem; color: #888; margin-bottom: 10px;">
+        Use '+' to combine multiple countries (e.g., RU+IT+CN)
     </div>
     """, unsafe_allow_html=True)
     
     countries_input = st.text_input(
-        "Enter countries (ISO codes, separate with +)",
+        "Enter country codes (2-letter ISO codes)",
         value=st.session_state.get('countries_input', ''),
-        placeholder="Example: RU or IT+RU or IT+RU+CN",
-        help="Enter country codes separated by '+'. Example: IT+RU+CN"
+        placeholder="Example: RU or IT+RU or RU+IT+CN",
+        help="Use '+' to combine multiple countries"
     )
     
+    st.markdown("</div>", unsafe_allow_html=True)
+    
     if countries_input:
-        countries = [c.strip().upper() for c in countries_input.split('+') if c.strip()]
+        countries = parse_country_filter(countries_input)
         if countries:
-            country_names = []
-            for code in countries:
-                full_name = COUNTRY_CODE_MAP.get(code, code)
-                country_names.append(f"{code} ({full_name})")
+            country_names = [get_full_country_name(c) for c in countries]
             st.markdown(f"""
             <div style="background: #e8f5e9; border-radius: 8px; padding: 12px; border-left: 4px solid #4CAF50; margin: 10px 0;">
-                <strong>✅ Selected countries:</strong> {', '.join(country_names)}
+                <strong>✅ Selected countries:</strong> {', '.join(country_names)} ({', '.join(countries)})
                 <br><span style="font-size: 0.85rem; color: #666;">Total: {len(countries)} countries</span>
             </div>
             """, unsafe_allow_html=True)
-    
-    st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style="background: #ffebee; border-radius: 8px; padding: 12px; border-left: 4px solid #f44336; margin: 10px 0;">
+                <strong>❌ Invalid country codes:</strong> Please use 2-letter ISO codes separated by '+'.
+                <br><span style="font-size: 0.85rem; color: #666;">Example: RU, IT, RU+IT, RU+IT+CN</span>
+            </div>
+            """, unsafe_allow_html=True)
     
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("🔍 Find Retracted Articles", type="primary", use_container_width=True):
+        if st.button("🔍 Search Retracted Articles", type="primary", use_container_width=True):
             if not years_input:
                 st.error("❌ Please enter at least one year.")
                 return
@@ -3221,30 +3388,41 @@ def step_parameters():
                 st.error("❌ Invalid year format. Please check your input.")
                 return
             
-            # Parse countries
-            countries = []
-            if countries_input:
-                countries = [c.strip().upper() for c in countries_input.split('+') if c.strip()]
+            countries = parse_country_filter(countries_input) if countries_input else []
             
-            # Store in session state
             st.session_state.years_input = years_input
             st.session_state.selected_years = years
             st.session_state.countries_input = countries_input
             st.session_state.selected_countries = countries
+            
+            # Clear previous results
+            if 'retracted_articles' in st.session_state:
+                del st.session_state.retracted_articles
+            if 'retraction_notices' in st.session_state:
+                del st.session_state.retraction_notices
+            if 'retraction_cards' in st.session_state:
+                del st.session_state.retraction_cards
+            if 'filtered_cards' in st.session_state:
+                del st.session_state.filtered_cards
+            if 'pdf_cache' in st.session_state:
+                del st.session_state.pdf_cache
+            if 'all_reports_generated' in st.session_state:
+                del st.session_state.all_reports_generated
+            
             st.session_state.current_step = 2
             st.rerun()
 
-def step_search():
+def step_retraction_search():
     """Step 2: Search for retracted articles and notices"""
     st.markdown("""
     <div class="step-card">
-        <h3 style="margin: 0; font-size: 1.3rem;">🔍 Step 2: Searching for Retracted Articles</h3>
-        <p style="margin: 5px 0; font-size: 0.9rem;">Fetching data from OpenAlex...</p>
+        <h3 style="margin: 0; font-size: 1.3rem;">🔍 Step 2: Searching Retracted Articles</h3>
+        <p style="margin: 5px 0; font-size: 0.9rem;">Fetching retracted articles and retraction notices from OpenAlex...</p>
     </div>
     """, unsafe_allow_html=True)
     
     if 'selected_years' not in st.session_state:
-        st.error("❌ No parameters set. Please go back to Step 1.")
+        st.error("❌ No search parameters. Please go back to Step 1.")
         return
     
     # Back button
@@ -3257,139 +3435,168 @@ def step_search():
     years = st.session_state.selected_years
     countries = st.session_state.get('selected_countries', [])
     
-    # Check if we already have data from previous search
-    data_loaded = (
-        'retraction_notices' in st.session_state and 
-        'retracted_articles' in st.session_state and
-        'merged_cards' in st.session_state and
-        st.session_state.retraction_notices is not None and
-        st.session_state.retracted_articles is not None and
-        st.session_state.merged_cards is not None
-    )
-    
-    if not data_loaded:
-        # Show metrics with placeholders
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{len(years)}</div>
-                <div class="metric-label">Years</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col2:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">{len(countries) if countries else 'All'}</div>
-                <div class="metric-label">Countries</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col3:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">...</div>
-                <div class="metric-label">Notices</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col4:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-value">...</div>
-                <div class="metric-label">Articles</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with st.spinner("Searching for retraction notices..."):
-            notices = search_retraction_notices_sync(years, countries)
-        
-        with st.spinner("Searching for retracted articles..."):
-            articles = search_retracted_articles_sync(years, countries)
-        
-        st.markdown(f"""
-        <div class="info-message" style="background: linear-gradient(135deg, #2196F315 0%, #0D47A115 100%); border-radius: 8px; padding: 12px; border-left: 3px solid #2196F3; font-size: 0.9rem; margin: 10px 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong>✅ Search Complete!</strong><br>
-                    Found {len(notices)} retraction notices and {len(articles)} retracted articles
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.session_state.retraction_notices = notices
-        st.session_state.retracted_articles = articles
-        
-        # Merge into cards
-        with st.spinner("Merging retraction pairs..."):
-            merged_cards = merge_retraction_pairs(notices, articles)
-        
-        st.session_state.merged_cards = merged_cards
-    else:
-        # Data already loaded - show cached results
-        notices = st.session_state.retraction_notices
-        articles = st.session_state.retracted_articles
-        merged_cards = st.session_state.merged_cards
-        
-        st.markdown(f"""
-        <div class="info-message" style="background: linear-gradient(135deg, #4CAF5015 0%, #2E7D3215 100%); border-radius: 8px; padding: 12px; border-left: 3px solid #4CAF50; font-size: 0.9rem; margin: 10px 0;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong>✅ Data Loaded from Cache!</strong><br>
-                    Found {len(notices)} retraction notices and {len(articles)} retracted articles
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Add a "Refresh Data" button
-        col_refresh1, col_refresh2, col_refresh3 = st.columns([1, 2, 1])
-        with col_refresh2:
-            if st.button("🔄 Refresh Data (re-fetch from OpenAlex)", use_container_width=True):
-                # Clear cached data
-                keys_to_clear = ['retraction_notices', 'retracted_articles', 'merged_cards', 
-                                'pdf_cache', 'all_reports_generated']
-                for key in keys_to_clear:
-                    if key in st.session_state:
-                        del st.session_state[key]
-                st.rerun()
-    
-    # Show current metrics
-    merged_count = sum(1 for card in merged_cards if card.get('is_merged', False))
-    notice_only = sum(1 for card in merged_cards if card.get('article_data') is None)
-    article_only = sum(1 for card in merged_cards if card.get('notice_data') == [] or len(card.get('notice_data', [])) == 0)
-    
-    total_notices = 0
-    for card in merged_cards:
-        if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-            total_notices += len(card.get('notice_data', []))
-    
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-value">{len(merged_cards)}</div>
-            <div class="metric-label">Total Cards</div>
+            <div class="metric-value">{len(years)}</div>
+            <div class="metric-label">Years</div>
         </div>
         """, unsafe_allow_html=True)
     with col2:
         st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-value">{merged_count}</div>
-            <div class="metric-label">Merged Pairs</div>
+            <div class="metric-value">{len(countries) if countries else 'All'}</div>
+            <div class="metric-label">Countries</div>
         </div>
         """, unsafe_allow_html=True)
     with col3:
         st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-value">{notice_only}</div>
-            <div class="metric-label">Notice Only</div>
+            <div class="metric-value">...</div>
+            <div class="metric-label">Articles</div>
         </div>
         """, unsafe_allow_html=True)
     with col4:
         st.markdown(f"""
         <div class="metric-card">
-            <div class="metric-value">{article_only}</div>
-            <div class="metric-label">Article Only</div>
+            <div class="metric-value">...</div>
+            <div class="metric-label">Notices</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with st.spinner("Fetching retracted articles..."):
+        retracted_articles = fetch_retracted_works_by_years_sync(years)
+        st.session_state.retracted_articles = retracted_articles
+    
+    with st.spinner("Fetching retraction notices..."):
+        retraction_notices = fetch_retraction_notices_by_years_sync(years)
+        st.session_state.retraction_notices = retraction_notices
+    
+    # Build retraction cards
+    with st.spinner("Building retraction cards..."):
+        cards = []
+        
+        # Track which articles have been matched with notices
+        matched_article_dois = set()
+        
+        # First, match retracted articles with their notices
+        for article in retracted_articles:
+            article_doi = article.get('doi', '').replace('https://doi.org/', '')
+            matching_notices = find_retraction_notices_for_article(article, retraction_notices)
+            
+            if matching_notices:
+                # Article with notices
+                card = enrich_retraction_card(article, matching_notices)
+                cards.append(card)
+                matched_article_dois.add(article_doi)
+                
+                # Mark notices as matched
+                for notice in matching_notices:
+                    notice_doi = notice.get('doi', '').replace('https://doi.org/', '')
+                    if notice_doi:
+                        matched_article_dois.add(notice_doi)
+            else:
+                # Article without notice
+                card = enrich_retraction_card(article, [])
+                cards.append(card)
+                matched_article_dois.add(article_doi)
+        
+        # Add notices that don't have matching articles
+        for notice in retraction_notices:
+            notice_doi = notice.get('doi', '').replace('https://doi.org/', '')
+            if notice_doi not in matched_article_dois:
+                # Check if this notice might have been matched already
+                is_matched = False
+                clean_notice_title = extract_clean_title_from_retraction_notice(notice)
+                for article in retracted_articles:
+                    clean_article_title = extract_clean_title_from_retracted_article(article)
+                    if clean_notice_title and clean_article_title:
+                        if (clean_notice_title.lower().strip() == clean_article_title.lower().strip() or
+                            clean_article_title.lower().strip() in clean_notice_title.lower().strip() or
+                            clean_notice_title.lower().strip() in clean_article_title.lower().strip()):
+                            is_matched = True
+                            break
+                
+                if not is_matched:
+                    card = enrich_retraction_notice_only(notice)
+                    cards.append(card)
+        
+        st.session_state.retraction_cards = cards
+        
+        # Filter cards by selected countries
+        if countries:
+            filtered_cards = filter_cards_by_countries(cards, countries)
+            st.session_state.filtered_cards = filtered_cards
+        else:
+            st.session_state.filtered_cards = cards
+    
+    total_articles = len(retracted_articles)
+    total_notices = len(retraction_notices)
+    total_cards = len(st.session_state.retraction_cards)
+    filtered_count = len(st.session_state.filtered_cards)
+    
+    st.markdown(f"""
+    <div style="background: #e8f5e9; border-radius: 8px; padding: 12px; border-left: 4px solid #4CAF50; margin: 10px 0;">
+        <strong>✅ Search Complete!</strong><br>
+        Found {total_articles} retracted articles, {total_notices} retraction notices, 
+        built {total_cards} cards ({filtered_count} after country filter)
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{total_articles:,}</div>
+            <div class="metric-label">Retracted Articles</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{total_notices:,}</div>
+            <div class="metric-label">Retraction Notices</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{total_cards:,}</div>
+            <div class="metric-label">Total Cards</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col4:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{filtered_count:,}</div>
+            <div class="metric-label">Filtered Cards</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Card type breakdown
+    card_types = Counter([card.get('card_type', 'unknown') for card in st.session_state.filtered_cards])
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value" style="font-size: 1.3rem;">{card_types.get('retracted_with_notice', 0)}</div>
+            <div class="metric-label">⚠️🚫 Article + Notice</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value" style="font-size: 1.3rem;">{card_types.get('retracted_only', 0)}</div>
+            <div class="metric-label">🚫 Article Only</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value" style="font-size: 1.3rem;">{card_types.get('notice_only', 0)}</div>
+            <div class="metric-label">⚠️ Notice Only</div>
         </div>
         """, unsafe_allow_html=True)
     
@@ -3400,17 +3607,17 @@ def step_search():
             st.session_state.current_step = 3
             st.rerun()
 
-def step_reports():
-    """Step 3: Generate and download reports"""
+def step_retraction_results():
+    """Step 3: Retraction Results with 3 PDF reports"""
     st.markdown("""
     <div class="step-card">
         <h3 style="margin: 0; font-size: 1.3rem;">📊 Step 3: Retraction Reports</h3>
-        <p style="margin: 5px 0; font-size: 0.9rem;">Download reports for retracted articles.</p>
+        <p style="margin: 5px 0; font-size: 0.9rem;">Download retraction analysis reports.</p>
     </div>
     """, unsafe_allow_html=True)
     
-    if 'merged_cards' not in st.session_state:
-        st.error("❌ No data available. Please go back to Step 2.")
+    if 'filtered_cards' not in st.session_state:
+        st.error("❌ No data available. Please go back.")
         return
     
     # Back button
@@ -3420,62 +3627,49 @@ def step_reports():
             st.session_state.current_step = 2
             st.rerun()
     
-    # Get all cards
-    all_cards = st.session_state.merged_cards
+    cards = st.session_state.filtered_cards
     years = st.session_state.selected_years
-    selected_countries = st.session_state.get('selected_countries', [])
+    countries = st.session_state.get('selected_countries', [])
     
-    # ============ FILTER CARDS BY SELECTED COUNTRIES ============
-    filtered_cards = []
+    if not cards:
+        st.warning("⚠️ No cards found after filtering. Try adjusting your search parameters.")
+        return
     
-    if selected_countries:
-        for card in all_cards:
-            # Check if this card has at least one author from selected countries
-            has_country = False
-            
-            # Check article countries
-            if card.get('article_enriched'):
-                article_countries = card['article_enriched'].get('countries', [])
-                for country_code in article_countries:
-                    if country_code.upper() in [c.upper() for c in selected_countries]:
-                        has_country = True
-                        break
-            
-            # Check notice countries if not found
-            if not has_country:
-                for notice_enriched in card.get('notice_enriched', []):
-                    notice_countries = notice_enriched.get('countries', [])
-                    for country_code in notice_countries:
-                        if country_code.upper() in [c.upper() for c in selected_countries]:
-                            has_country = True
-                            break
-                    if has_country:
-                        break
-            
-            if has_country:
-                filtered_cards.append(card)
-    else:
-        filtered_cards = all_cards
+    # Generate groupings
+    with st.spinner("Generating report groupings..."):
+        country_hierarchy = group_cards_by_country_affiliation(cards, countries)
+        author_cards = group_cards_by_author(cards, countries)
+        publisher_hierarchy = group_cards_by_publisher_journal(cards)
     
-    # Update session state with filtered cards for reports
-    st.session_state.filtered_cards_for_reports = filtered_cards
+    total_cards = len(cards)
     
-    # Show filter info
-    if selected_countries:
-        country_names = [COUNTRY_CODE_MAP.get(c, c) for c in selected_countries]
+    col1, col2, col3 = st.columns(3)
+    with col1:
         st.markdown(f"""
-        <div style="background: #e8f5e9; border-radius: 8px; padding: 12px; border-left: 4px solid #4CAF50; margin: 10px 0;">
-            <strong>✅ Filtered by countries:</strong> {', '.join(country_names)}
-            <br><span style="font-size: 0.85rem; color: #666;">Found {len(filtered_cards)} cards with authors from selected countries (out of {len(all_cards)} total)</span>
+        <div class="metric-card">
+            <div class="metric-value">{total_cards:,}</div>
+            <div class="metric-label">Total Cards</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{len(country_hierarchy)}</div>
+            <div class="metric-label">Countries</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{len(author_cards)}</div>
+            <div class="metric-label">Authors</div>
         </div>
         """, unsafe_allow_html=True)
     
-    # If no cards after filtering
-    if not filtered_cards:
-        st.warning("⚠️ No cards found with authors from selected countries. Please check your country selection.")
-        return
+    st.markdown("---")
+    st.markdown("### 📥 Download Reports")
     
-    journal_name = "Retracted Articles Analysis"
+    journal_name = "Retraction Analysis"
     journal_abbr = "RETRACT"
     logo_path = None
     
@@ -3496,74 +3690,16 @@ def step_reports():
     if 'all_reports_generated' not in st.session_state:
         st.session_state.all_reports_generated = False
     
-    # Generate groupings using FILTERED cards
-    with st.spinner("Generating report groupings..."):
-        # Group by country - but now only countries that appear in filtered cards
-        country_hierarchy = group_cards_by_country_affiliation(filtered_cards)
-        # Remove empty groups and groups with 0 notices
-        country_hierarchy = filter_empty_groups(country_hierarchy)
-        country_hierarchy = sort_hierarchy_by_notice_count(country_hierarchy)
-        
-        author_groups = group_cards_by_author(filtered_cards)
-        author_groups = filter_empty_author_groups(author_groups)
-        author_groups = sort_author_groups_by_notice_count(author_groups)
-        
-        publisher_hierarchy = group_cards_by_publisher_journal(filtered_cards)
-        publisher_hierarchy = filter_empty_groups(publisher_hierarchy)
-        publisher_hierarchy = sort_hierarchy_by_notice_count(publisher_hierarchy)
+    # Create unique cache keys
+    filter_hash = hashlib.md5(str(sorted([card.get('doi', '') for card in cards])).encode()).hexdigest()[:8]
+    years_hash = hashlib.md5(','.join(map(str, years)).encode()).hexdigest()[:8]
+    countries_hash = hashlib.md5(','.join(sorted(countries)).encode()).hexdigest()[:8] if countries else 'all'
     
-    # Statistics
-    total_cards = len(filtered_cards)
-    total_notices = 0
-    for card in filtered_cards:
-        if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
-            total_notices += len(card.get('notice_data', []))
-    
-    merged_count = sum(1 for card in filtered_cards if card.get('is_merged', False))
-    notice_only = sum(1 for card in filtered_cards if card.get('article_data') is None)
-    article_only = sum(1 for card in filtered_cards if card.get('notice_data') == [] or len(card.get('notice_data', [])) == 0)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{total_cards}</div>
-            <div class="metric-label">Total Cards</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{total_notices}</div>
-            <div class="metric-label">Retraction Notices</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{len(country_hierarchy)}</div>
-            <div class="metric-label">Countries</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col4:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{len(publisher_hierarchy)}</div>
-            <div class="metric-label">Publishers</div>
-        </div>
-        """, unsafe_allow_html=True)
+    cache_key_country = f"retract_country_{years_hash}_{countries_hash}_{filter_hash}"
+    cache_key_author = f"retract_author_{years_hash}_{countries_hash}_{filter_hash}"
+    cache_key_publisher = f"retract_publisher_{years_hash}_{countries_hash}_{filter_hash}"
     
     st.markdown("---")
-    st.markdown("### 📥 Download Reports")
-    
-    # Create unique cache keys
-    cards_hash = hashlib.md5(str([str(id(card)) for card in filtered_cards]).encode()).hexdigest()[:8]
-    years_hash = hashlib.md5(','.join(map(str, years)).encode()).hexdigest()[:8]
-    countries_hash = hashlib.md5(','.join(sorted(selected_countries)).encode()).hexdigest()[:8]
-    
-    cache_key_country = f"country_{years_hash}_{countries_hash}_{cards_hash}"
-    cache_key_author = f"author_{years_hash}_{countries_hash}_{cards_hash}"
-    cache_key_publisher = f"publisher_{years_hash}_{countries_hash}_{cards_hash}"
     
     col_gen1, col_gen2, col_gen3 = st.columns([1, 1, 1])
     with col_gen2:
@@ -3575,28 +3711,28 @@ def step_reports():
                     
                     status_text.text("Generating Country → Affiliation report...")
                     if cache_key_country not in st.session_state.pdf_cache:
-                        st.session_state.pdf_cache[cache_key_country] = generate_retraction_pdf_by_country(
-                            journal_name, years,
+                        st.session_state.pdf_cache[cache_key_country] = generate_pdf_retraction_report_country_affiliation(
+                            journal_name, years, countries,
                             country_hierarchy, logo_path,
-                            "Retracted Articles by Country & Affiliation"
+                            "Retraction Report by Country & Affiliation"
                         )
                     progress_bar.progress(0.33)
                     
                     status_text.text("Generating Author report...")
                     if cache_key_author not in st.session_state.pdf_cache:
-                        st.session_state.pdf_cache[cache_key_author] = generate_retraction_pdf_by_author(
-                            journal_name, years,
-                            author_groups, logo_path,
-                            "Retracted Articles by Author"
+                        st.session_state.pdf_cache[cache_key_author] = generate_pdf_retraction_report_author(
+                            journal_name, years, countries,
+                            author_cards, logo_path,
+                            "Retraction Report by Author"
                         )
                     progress_bar.progress(0.66)
                     
                     status_text.text("Generating Publisher → Journal report...")
                     if cache_key_publisher not in st.session_state.pdf_cache:
-                        st.session_state.pdf_cache[cache_key_publisher] = generate_retraction_pdf_by_publisher(
-                            journal_name, years,
+                        st.session_state.pdf_cache[cache_key_publisher] = generate_pdf_retraction_report_publisher_journal(
+                            journal_name, years, countries,
                             publisher_hierarchy, logo_path,
-                            "Retracted Articles by Publisher & Journal"
+                            "Retraction Report by Publisher & Journal"
                         )
                     progress_bar.progress(1.0)
                     
@@ -3613,7 +3749,7 @@ def step_reports():
     
     with col1:
         st.markdown("**🌍 Report 1: Country → Affiliation**")
-        st.markdown("*Sorted by retraction notice count*")
+        st.markdown("*Sorted by card count*")
         
         if cache_key_country in st.session_state.pdf_cache:
             pdf_data = st.session_state.pdf_cache[cache_key_country]
@@ -3633,17 +3769,17 @@ def step_reports():
         else:
             if st.button("📄 Generate Country Report", key=f"gen_country_{cache_key_country}", use_container_width=True):
                 with st.spinner("Generating Country Report..."):
-                    pdf_data = generate_retraction_pdf_by_country(
-                        journal_name, years,
+                    pdf_data = generate_pdf_retraction_report_country_affiliation(
+                        journal_name, years, countries,
                         country_hierarchy, logo_path,
-                        "Retracted Articles by Country & Affiliation"
+                        "Retraction Report by Country & Affiliation"
                     )
                     st.session_state.pdf_cache[cache_key_country] = pdf_data
                     st.rerun()
     
     with col2:
-        st.markdown("**👤 Report 2: Author**")
-        st.markdown("*Sorted by retraction notice count*")
+        st.markdown("**👤 Report 2: By Author**")
+        st.markdown("*Sorted by card count*")
         
         if cache_key_author in st.session_state.pdf_cache:
             pdf_data = st.session_state.pdf_cache[cache_key_author]
@@ -3663,17 +3799,17 @@ def step_reports():
         else:
             if st.button("📄 Generate Author Report", key=f"gen_author_{cache_key_author}", use_container_width=True):
                 with st.spinner("Generating Author Report..."):
-                    pdf_data = generate_retraction_pdf_by_author(
-                        journal_name, years,
-                        author_groups, logo_path,
-                        "Retracted Articles by Author"
+                    pdf_data = generate_pdf_retraction_report_author(
+                        journal_name, years, countries,
+                        author_cards, logo_path,
+                        "Retraction Report by Author"
                     )
                     st.session_state.pdf_cache[cache_key_author] = pdf_data
                     st.rerun()
     
     with col3:
         st.markdown("**📚 Report 3: Publisher → Journal**")
-        st.markdown("*Sorted by retraction notice count*")
+        st.markdown("*Sorted by card count*")
         
         if cache_key_publisher in st.session_state.pdf_cache:
             pdf_data = st.session_state.pdf_cache[cache_key_publisher]
@@ -3693,10 +3829,10 @@ def step_reports():
         else:
             if st.button("📄 Generate Publisher Report", key=f"gen_publisher_{cache_key_publisher}", use_container_width=True):
                 with st.spinner("Generating Publisher Report..."):
-                    pdf_data = generate_retraction_pdf_by_publisher(
-                        journal_name, years,
+                    pdf_data = generate_pdf_retraction_report_publisher_journal(
+                        journal_name, years, countries,
                         publisher_hierarchy, logo_path,
-                        "Retracted Articles by Publisher & Journal"
+                        "Retraction Report by Publisher & Journal"
                     )
                     st.session_state.pdf_cache[cache_key_publisher] = pdf_data
                     st.rerun()
@@ -3734,9 +3870,9 @@ def step_reports():
     st.markdown("---")
     
     if st.button("🔄 New Analysis", use_container_width=True):
-        keys_to_clear = ['current_step', 'years_input', 'selected_years', 'countries_input',
-                        'selected_countries', 'retraction_notices', 'retracted_articles',
-                        'merged_cards', 'pdf_cache', 'all_reports_generated', 'filtered_cards_for_reports']
+        keys_to_clear = ['current_step', 'years_input', 'selected_years', 'countries_input', 
+                        'selected_countries', 'retracted_articles', 'retraction_notices',
+                        'retraction_cards', 'filtered_cards', 'pdf_cache', 'all_reports_generated']
         for key in keys_to_clear:
             if key in st.session_state:
                 del st.session_state[key]
@@ -3819,17 +3955,17 @@ def main():
     
     # Display current step
     if st.session_state.current_step == 1:
-        step_parameters()
+        step_retraction_parameters()
     elif st.session_state.current_step == 2:
-        step_search()
+        step_retraction_search()
     elif st.session_state.current_step == 3:
-        step_reports()
+        step_retraction_results()
     
     # Footer
     st.markdown("""
     <div class="footer">
-        <p>© Retraction Detector Pro | https://chimicatechnoacta.ru</p>
-        <p style="font-size: 0.7rem; color: #aaa;">Retraction Article Detector Pro with multi-report generation</p>
+        <p>© CTA, https://chimicatechnoacta.ru / developed by daM©</p>
+        <p style="font-size: 0.7rem; color: #aaa;">CTA Retraction Article Detector Pro*2 with multi-report generation</p>
     </div>
     """, unsafe_allow_html=True)
 
