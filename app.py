@@ -1826,6 +1826,56 @@ def sort_author_groups_by_notice_count(author_groups: Dict[str, List[dict]]) -> 
     
     return sorted_groups
 
+def filter_empty_groups(hierarchy: Dict) -> Dict:
+    """
+    Remove groups that have 0 retraction notices.
+    """
+    if not hierarchy:
+        return hierarchy
+    
+    filtered_hierarchy = {}
+    
+    for key, value in hierarchy.items():
+        if isinstance(value, dict):
+            # Check if this group has any notices
+            has_notices = False
+            filtered_sub = {}
+            
+            for sub_key, cards in value.items():
+                notice_count = 0
+                for card in cards:
+                    if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
+                        notice_count += len(card.get('notice_data', []))
+                
+                if notice_count > 0:
+                    filtered_sub[sub_key] = cards
+                    has_notices = True
+            
+            if has_notices and filtered_sub:
+                filtered_hierarchy[key] = filtered_sub
+    
+    return filtered_hierarchy
+
+def filter_empty_author_groups(author_groups: Dict[str, List[dict]]) -> Dict[str, List[dict]]:
+    """
+    Remove author groups that have 0 retraction notices.
+    """
+    if not author_groups:
+        return author_groups
+    
+    filtered_groups = {}
+    
+    for author_key, cards in author_groups.items():
+        notice_count = 0
+        for card in cards:
+            if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
+                notice_count += len(card.get('notice_data', []))
+        
+        if notice_count > 0:
+            filtered_groups[author_key] = cards
+    
+    return filtered_groups
+
 # ============================================================================
 # PDF REPORT GENERATION FOR RETRACTION
 # ============================================================================
@@ -3370,8 +3420,61 @@ def step_reports():
             st.session_state.current_step = 2
             st.rerun()
     
-    cards = st.session_state.merged_cards
+    # Get all cards
+    all_cards = st.session_state.merged_cards
     years = st.session_state.selected_years
+    selected_countries = st.session_state.get('selected_countries', [])
+    
+    # ============ FILTER CARDS BY SELECTED COUNTRIES ============
+    filtered_cards = []
+    
+    if selected_countries:
+        for card in all_cards:
+            # Check if this card has at least one author from selected countries
+            has_country = False
+            
+            # Check article countries
+            if card.get('article_enriched'):
+                article_countries = card['article_enriched'].get('countries', [])
+                for country_code in article_countries:
+                    if country_code.upper() in [c.upper() for c in selected_countries]:
+                        has_country = True
+                        break
+            
+            # Check notice countries if not found
+            if not has_country:
+                for notice_enriched in card.get('notice_enriched', []):
+                    notice_countries = notice_enriched.get('countries', [])
+                    for country_code in notice_countries:
+                        if country_code.upper() in [c.upper() for c in selected_countries]:
+                            has_country = True
+                            break
+                    if has_country:
+                        break
+            
+            if has_country:
+                filtered_cards.append(card)
+    else:
+        filtered_cards = all_cards
+    
+    # Update session state with filtered cards for reports
+    st.session_state.filtered_cards_for_reports = filtered_cards
+    
+    # Show filter info
+    if selected_countries:
+        country_names = [COUNTRY_CODE_MAP.get(c, c) for c in selected_countries]
+        st.markdown(f"""
+        <div style="background: #e8f5e9; border-radius: 8px; padding: 12px; border-left: 4px solid #4CAF50; margin: 10px 0;">
+            <strong>✅ Filtered by countries:</strong> {', '.join(country_names)}
+            <br><span style="font-size: 0.85rem; color: #666;">Found {len(filtered_cards)} cards with authors from selected countries (out of {len(all_cards)} total)</span>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # If no cards after filtering
+    if not filtered_cards:
+        st.warning("⚠️ No cards found with authors from selected countries. Please check your country selection.")
+        return
+    
     journal_name = "Retracted Articles Analysis"
     journal_abbr = "RETRACT"
     logo_path = None
@@ -3393,23 +3496,32 @@ def step_reports():
     if 'all_reports_generated' not in st.session_state:
         st.session_state.all_reports_generated = False
     
-    # Generate groupings
+    # Generate groupings using FILTERED cards
     with st.spinner("Generating report groupings..."):
-        country_hierarchy = group_cards_by_country_affiliation(cards)
+        # Group by country - but now only countries that appear in filtered cards
+        country_hierarchy = group_cards_by_country_affiliation(filtered_cards)
+        # Remove empty groups and groups with 0 notices
+        country_hierarchy = filter_empty_groups(country_hierarchy)
         country_hierarchy = sort_hierarchy_by_notice_count(country_hierarchy)
         
-        author_groups = group_cards_by_author(cards)
+        author_groups = group_cards_by_author(filtered_cards)
+        author_groups = filter_empty_author_groups(author_groups)
         author_groups = sort_author_groups_by_notice_count(author_groups)
         
-        publisher_hierarchy = group_cards_by_publisher_journal(cards)
+        publisher_hierarchy = group_cards_by_publisher_journal(filtered_cards)
+        publisher_hierarchy = filter_empty_groups(publisher_hierarchy)
         publisher_hierarchy = sort_hierarchy_by_notice_count(publisher_hierarchy)
     
     # Statistics
-    total_cards = len(cards)
+    total_cards = len(filtered_cards)
     total_notices = 0
-    for card in cards:
+    for card in filtered_cards:
         if card.get('notice_data') and len(card.get('notice_data', [])) > 0:
             total_notices += len(card.get('notice_data', []))
+    
+    merged_count = sum(1 for card in filtered_cards if card.get('is_merged', False))
+    notice_only = sum(1 for card in filtered_cards if card.get('article_data') is None)
+    article_only = sum(1 for card in filtered_cards if card.get('notice_data') == [] or len(card.get('notice_data', [])) == 0)
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -3445,12 +3557,13 @@ def step_reports():
     st.markdown("### 📥 Download Reports")
     
     # Create unique cache keys
-    cards_hash = hashlib.md5(str([str(id(card)) for card in cards]).encode()).hexdigest()[:8]
+    cards_hash = hashlib.md5(str([str(id(card)) for card in filtered_cards]).encode()).hexdigest()[:8]
     years_hash = hashlib.md5(','.join(map(str, years)).encode()).hexdigest()[:8]
+    countries_hash = hashlib.md5(','.join(sorted(selected_countries)).encode()).hexdigest()[:8]
     
-    cache_key_country = f"country_{years_hash}_{cards_hash}"
-    cache_key_author = f"author_{years_hash}_{cards_hash}"
-    cache_key_publisher = f"publisher_{years_hash}_{cards_hash}"
+    cache_key_country = f"country_{years_hash}_{countries_hash}_{cards_hash}"
+    cache_key_author = f"author_{years_hash}_{countries_hash}_{cards_hash}"
+    cache_key_publisher = f"publisher_{years_hash}_{countries_hash}_{cards_hash}"
     
     col_gen1, col_gen2, col_gen3 = st.columns([1, 1, 1])
     with col_gen2:
@@ -3623,7 +3736,7 @@ def step_reports():
     if st.button("🔄 New Analysis", use_container_width=True):
         keys_to_clear = ['current_step', 'years_input', 'selected_years', 'countries_input',
                         'selected_countries', 'retraction_notices', 'retracted_articles',
-                        'merged_cards', 'pdf_cache', 'all_reports_generated']
+                        'merged_cards', 'pdf_cache', 'all_reports_generated', 'filtered_cards_for_reports']
         for key in keys_to_clear:
             if key in st.session_state:
                 del st.session_state[key]
