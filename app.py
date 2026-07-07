@@ -3207,63 +3207,103 @@ def step_search():
     years = st.session_state.selected_years
     countries = st.session_state.get('selected_countries', [])
     
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{len(years)}</div>
-            <div class="metric-label">Years</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{len(countries) if countries else 'All'}</div>
-            <div class="metric-label">Countries</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">...</div>
-            <div class="metric-label">Notices</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col4:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">...</div>
-            <div class="metric-label">Articles</div>
-        </div>
-        """, unsafe_allow_html=True)
+    # Check if we already have data from previous search
+    data_loaded = (
+        'retraction_notices' in st.session_state and 
+        'retracted_articles' in st.session_state and
+        'merged_cards' in st.session_state and
+        st.session_state.retraction_notices is not None and
+        st.session_state.retracted_articles is not None and
+        st.session_state.merged_cards is not None
+    )
     
-    with st.spinner("Searching for retraction notices..."):
-        notices = search_retraction_notices_sync(years, countries)
-    
-    with st.spinner("Searching for retracted articles..."):
-        articles = search_retracted_articles_sync(years, countries)
-    
-    st.markdown(f"""
-    <div class="info-message" style="background: linear-gradient(135deg, #2196F315 0%, #0D47A115 100%); border-radius: 8px; padding: 12px; border-left: 3px solid #2196F3; font-size: 0.9rem; margin: 10px 0;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <strong>✅ Search Complete!</strong><br>
-                Found {len(notices)} retraction notices and {len(articles)} retracted articles
+    if not data_loaded:
+        # Show metrics with placeholders
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-value">{len(years)}</div>
+                <div class="metric-label">Years</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-value">{len(countries) if countries else 'All'}</div>
+                <div class="metric-label">Countries</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col3:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-value">...</div>
+                <div class="metric-label">Notices</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col4:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="metric-value">...</div>
+                <div class="metric-label">Articles</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with st.spinner("Searching for retraction notices..."):
+            notices = search_retraction_notices_sync(years, countries)
+        
+        with st.spinner("Searching for retracted articles..."):
+            articles = search_retracted_articles_sync(years, countries)
+        
+        st.markdown(f"""
+        <div class="info-message" style="background: linear-gradient(135deg, #2196F315 0%, #0D47A115 100%); border-radius: 8px; padding: 12px; border-left: 3px solid #2196F3; font-size: 0.9rem; margin: 10px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>✅ Search Complete!</strong><br>
+                    Found {len(notices)} retraction notices and {len(articles)} retracted articles
+                </div>
             </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+        
+        st.session_state.retraction_notices = notices
+        st.session_state.retracted_articles = articles
+        
+        # Merge into cards
+        with st.spinner("Merging retraction pairs..."):
+            merged_cards = merge_retraction_pairs(notices, articles)
+        
+        st.session_state.merged_cards = merged_cards
+    else:
+        # Data already loaded - show cached results
+        notices = st.session_state.retraction_notices
+        articles = st.session_state.retracted_articles
+        merged_cards = st.session_state.merged_cards
+        
+        st.markdown(f"""
+        <div class="info-message" style="background: linear-gradient(135deg, #4CAF5015 0%, #2E7D3215 100%); border-radius: 8px; padding: 12px; border-left: 3px solid #4CAF50; font-size: 0.9rem; margin: 10px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <strong>✅ Data Loaded from Cache!</strong><br>
+                    Found {len(notices)} retraction notices and {len(articles)} retracted articles
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Add a "Refresh Data" button
+        col_refresh1, col_refresh2, col_refresh3 = st.columns([1, 2, 1])
+        with col_refresh2:
+            if st.button("🔄 Refresh Data (re-fetch from OpenAlex)", use_container_width=True):
+                # Clear cached data
+                keys_to_clear = ['retraction_notices', 'retracted_articles', 'merged_cards', 
+                                'pdf_cache', 'all_reports_generated']
+                for key in keys_to_clear:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                st.rerun()
     
-    st.session_state.retraction_notices = notices
-    st.session_state.retracted_articles = articles
-    
-    # Merge into cards
-    with st.spinner("Merging retraction pairs..."):
-        merged_cards = merge_retraction_pairs(notices, articles)
-    
-    st.session_state.merged_cards = merged_cards
-    
-    # Statistics after merging
+    # Show current metrics
     merged_count = sum(1 for card in merged_cards if card.get('is_merged', False))
     notice_only = sum(1 for card in merged_cards if card.get('article_data') is None)
     article_only = sum(1 for card in merged_cards if card.get('notice_data') == [] or len(card.get('notice_data', [])) == 0)
