@@ -556,19 +556,230 @@ def format_year_filter_for_filename(years: List[int]) -> str:
 def parse_countries_input(country_input: str) -> List[str]:
     """
     Parse country codes from input string.
+    Case-insensitive, supports various separators.
     Examples:
     "RU" -> ['RU']
+    "ru" -> ['RU']
     "IT+RU" -> ['IT', 'RU']
+    "it+ru" -> ['IT', 'RU']
+    "it,ru" -> ['IT', 'RU']
+    "IT,RU" -> ['IT', 'RU']
+    "IT, RU" -> ['IT', 'RU']
+    "it, ru" -> ['IT', 'RU']
     "IT+RU+CN" -> ['IT', 'RU', 'CN']
+    "it+ru+cn" -> ['IT', 'RU', 'CN']
+    "it, ru, cn" -> ['IT', 'RU', 'CN']
+    "IT, RU, CN" -> ['IT', 'RU', 'CN']
+    "it,ru,cn" -> ['IT', 'RU', 'CN']
+    "IT, RU + CN" -> ['IT', 'RU', 'CN']
+    "it, ru + cn" -> ['IT', 'RU', 'CN']
+    "   IT   ,   RU   +   CN   " -> ['IT', 'RU', 'CN']
     """
     if not country_input or country_input.strip() == "":
         return []
     
-    # Remove whitespace and split by '+'
-    countries = country_input.replace(' ', '').split('+')
-    # Filter out empty strings and convert to uppercase
-    countries = [c.upper() for c in countries if c and c.strip()]
-    return countries
+    # Remove all whitespace
+    clean_input = country_input.replace(' ', '')
+    
+    # Replace common separators with '+'
+    # Convert commas, semicolons, spaces to '+'
+    for separator in [',', ';', '|', '/', '\\', '-', '_']:
+        clean_input = clean_input.replace(separator, '+')
+    
+    # Remove any remaining whitespace
+    clean_input = clean_input.replace(' ', '')
+    
+    # Split by '+'
+    countries = [c.strip() for c in clean_input.split('+') if c.strip()]
+    
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_countries = []
+    for country in countries:
+        country_upper = country.upper()
+        if country_upper not in seen:
+            seen.add(country_upper)
+            unique_countries.append(country_upper)
+    
+    # Filter out empty strings and validate (2-letter codes)
+    validated_countries = []
+    for country in unique_countries:
+        if country and country.strip():
+            # Basic validation: should be 2 letters
+            if len(country) == 2 and country.isalpha():
+                validated_countries.append(country)
+            elif len(country) > 0:
+                # If it's longer than 2 letters, try to extract 2-letter code
+                # This handles cases like "Russia" -> "RU"
+                country_code_map = {
+                    'RUSSIA': 'RU',
+                    'RUSSIAN': 'RU',
+                    'RUS': 'RU',
+                    'ITALY': 'IT',
+                    'ITALIAN': 'IT',
+                    'ITA': 'IT',
+                    'CHINA': 'CN',
+                    'CHINESE': 'CN',
+                    'PEOPLES': 'CN',
+                    'UNITED STATES': 'US',
+                    'UNITED STATES OF AMERICA': 'US',
+                    'USA': 'US',
+                    'AMERICA': 'US',
+                    'UNITED KINGDOM': 'GB',
+                    'UK': 'GB',
+                    'GREAT BRITAIN': 'GB',
+                    'ENGLAND': 'GB',
+                    'GERMANY': 'DE',
+                    'GERMAN': 'DE',
+                    'DEU': 'DE',
+                    'FRANCE': 'FR',
+                    'FRENCH': 'FR',
+                    'FRA': 'FR',
+                    'JAPAN': 'JP',
+                    'JAPANESE': 'JP',
+                    'JPN': 'JP',
+                    'CANADA': 'CA',
+                    'CAN': 'CA',
+                    'AUSTRALIA': 'AU',
+                    'AUS': 'AU',
+                    'BRAZIL': 'BR',
+                    'BRA': 'BR',
+                    'INDIA': 'IN',
+                    'IND': 'IN',
+                    'SOUTH KOREA': 'KR',
+                    'KOREA': 'KR',
+                    'KOR': 'KR',
+                    'NETHERLANDS': 'NL',
+                    'NLD': 'NL',
+                    'SWITZERLAND': 'CH',
+                    'CHE': 'CH',
+                    'SWEDEN': 'SE',
+                    'SWE': 'SE',
+                    'BELGIUM': 'BE',
+                    'BEL': 'BE',
+                    'DENMARK': 'DK',
+                    'DNK': 'DK',
+                    'FINLAND': 'FI',
+                    'FIN': 'FI',
+                    'NORWAY': 'NO',
+                    'NOR': 'NO',
+                    'POLAND': 'PL',
+                    'POL': 'PL',
+                    'UKRAINE': 'UA',
+                    'UKR': 'UA',
+                    'KAZAKHSTAN': 'KZ',
+                    'KAZ': 'KZ',
+                    'UZBEKISTAN': 'UZ',
+                    'UZB': 'UZ',
+                    'BELARUS': 'BY',
+                    'BLR': 'BY',
+                    'AZERBAIJAN': 'AZ',
+                    'AZE': 'AZ',
+                    'GEORGIA': 'GE',
+                    'GEO': 'GE',
+                    'ARMENIA': 'AM',
+                    'ARM': 'AM',
+                    'MOLDOVA': 'MD',
+                    'MDA': 'MD',
+                    'TURKEY': 'TR',
+                    'TUR': 'TR',
+                    'ISRAEL': 'IL',
+                    'ISR': 'IL',
+                    'SAUDI ARABIA': 'SA',
+                    'SAU': 'SA',
+                    'UNITED ARAB EMIRATES': 'AE',
+                    'ARE': 'AE',
+                    'QATAR': 'QA',
+                    'QAT': 'QA',
+                    'KUWAIT': 'KW',
+                    'KWT': 'KW',
+                    'OMAN': 'OM',
+                    'OMN': 'OM',
+                    'BAHRAIN': 'BH',
+                    'BHR': 'BH',
+                    'IRAN': 'IR',
+                    'IRN': 'IR',
+                    'IRAQ': 'IQ',
+                    'IRQ': 'IRQ',
+                    'SYRIA': 'SY',
+                    'SYR': 'SY',
+                    'JORDAN': 'JO',
+                    'JOR': 'JO',
+                    'LEBANON': 'LB',
+                    'LBN': 'LB',
+                    'EGYPT': 'EG',
+                    'EGY': 'EG',
+                    'SOUTH AFRICA': 'ZA',
+                    'ZAF': 'ZA',
+                    'NIGERIA': 'NG',
+                    'NGA': 'NG',
+                    'KENYA': 'KE',
+                    'KEN': 'KE',
+                    'GHANA': 'GH',
+                    'GHA': 'GH',
+                    'MEXICO': 'MX',
+                    'MEX': 'MX',
+                    'ARGENTINA': 'AR',
+                    'ARG': 'AR',
+                    'CHILE': 'CL',
+                    'CHL': 'CL',
+                    'COLOMBIA': 'CO',
+                    'COL': 'CO',
+                    'PERU': 'PE',
+                    'PER': 'PE',
+                    'VENEZUELA': 'VE',
+                    'VEN': 'VE',
+                    'MALAYSIA': 'MY',
+                    'MYS': 'MY',
+                    'SINGAPORE': 'SG',
+                    'SGP': 'SG',
+                    'INDONESIA': 'ID',
+                    'IDN': 'ID',
+                    'THAILAND': 'TH',
+                    'THA': 'TH',
+                    'VIETNAM': 'VN',
+                    'VNM': 'VN',
+                    'PHILIPPINES': 'PH',
+                    'PHL': 'PH',
+                    'PAKISTAN': 'PK',
+                    'PAK': 'PK',
+                    'BANGLADESH': 'BD',
+                    'BGD': 'BD',
+                    'NEW ZEALAND': 'NZ',
+                    'NZL': 'NZ'
+                }
+                country_upper = country.upper()
+                if country_upper in country_code_map:
+                    validated_countries.append(country_code_map[country_upper])
+                else:
+                    # Try to find a match by checking if input contains a known country code
+                    found = False
+                    for key, code in country_code_map.items():
+                        if key in country_upper or country_upper in key:
+                            validated_countries.append(code)
+                            found = True
+                            break
+                    if not found:
+                        # If it's a valid 2-letter code but lowercase, convert to uppercase
+                        if len(country) == 2 and country.isalpha():
+                            validated_countries.append(country.upper())
+                        else:
+                            # If it's a single letter, skip
+                            if len(country) >= 2:
+                                # Take first two letters as fallback
+                                code = country[:2].upper()
+                                if code.isalpha():
+                                    validated_countries.append(code)
+    
+    # Remove duplicates after validation
+    final_seen = set()
+    final_countries = []
+    for country in validated_countries:
+        if country not in final_seen:
+            final_seen.add(country)
+            final_countries.append(country)
+    
+    return final_countries
 
 def format_countries_for_filename(countries: List[str]) -> str:
     """
