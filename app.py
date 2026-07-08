@@ -376,7 +376,7 @@ MAX_DELAY = 60
 
 CACHE_DIR = Path("./cache")
 CACHE_DB = CACHE_DIR / "openalex_cache.db"
-CACHE_EXPIRY_DAYS = 30/24/2
+CACHE_EXPIRY_DAYS = 30
 
 CACHE_DIR.mkdir(exist_ok=True)
 
@@ -1158,11 +1158,81 @@ def get_author_from_country(work: dict, target_countries: List[str]) -> List[dic
     
     return authors
 
+def extract_funders_and_awards(work: dict) -> Tuple[List[dict], List[dict]]:
+    """
+    Extract funders and awards from OpenAlex work data.
+    Returns:
+    - awards_full: List of dict with award info {funder_display_name, funder_award_id, funder_id}
+    - funders_full: List of dict with funder info {id, display_name, ror}
+    """
+    awards_full = []
+    funders_full = []
+    
+    # Extract awards
+    awards = work.get('awards', [])
+    if awards:
+        for award in awards:
+            award_info = {
+                'funder_display_name': award.get('funder_display_name', ''),
+                'funder_award_id': award.get('funder_award_id', ''),
+                'funder_id': award.get('funder_id', ''),
+                'id': award.get('id', '')
+            }
+            if award_info['funder_display_name'] or award_info['funder_award_id']:
+                awards_full.append(award_info)
+    
+    # Extract funders
+    funders = work.get('funders', [])
+    if funders:
+        for funder in funders:
+            funder_info = {
+                'id': funder.get('id', ''),
+                'display_name': funder.get('display_name', ''),
+                'ror': funder.get('ror', '')
+            }
+            if funder_info['display_name']:
+                funders_full.append(funder_info)
+    
+    # If there are awards but no funders, try to create funder entries from awards
+    if awards_full and not funders_full:
+        for award in awards_full:
+            funder_name = award.get('funder_display_name', '')
+            funder_id = award.get('funder_id', '')
+            if funder_name and not any(f.get('display_name') == funder_name for f in funders_full):
+                funders_full.append({
+                    'id': funder_id,
+                    'display_name': funder_name,
+                    'ror': None
+                })
+    
+    return awards_full, funders_full
+
+def get_unique_affiliations(work: dict) -> List[str]:
+    """
+    Get unique affiliation names from work.
+    Returns list of unique affiliation names.
+    """
+    affiliations_set = set()
+    authorships = work.get('authorships', [])
+    
+    for authorship in authorships:
+        if authorship:
+            for inst in authorship.get('institutions', []):
+                if inst:
+                    inst_name = inst.get('display_name', '')
+                    if inst_name:
+                        inst_name = str(inst_name).strip()
+                        if inst_name:
+                            affiliations_set.add(inst_name)
+    
+    return sorted(list(affiliations_set))
+
 def enrich_retracted_work(work: dict) -> dict:
     """
     Enrich retracted article data with complete information.
     No truncation of authors or affiliations.
     Uses raw_author_name for Cyrillic names when available.
+    Now includes funders, awards, and unique affiliations.
     """
     if not work:
         return {}
@@ -1178,8 +1248,32 @@ def enrich_retracted_work(work: dict) -> dict:
     # Build authors string with proper names
     authors_str = ', '.join([a['name'] for a in authors_full]) if authors_full else 'Authors not specified'
     
-    # Format affiliations with country codes
-    affiliations_str = ' / '.join([f"{a['name']} ({a['country']})" for a in affiliations_full]) if affiliations_full else 'No affiliations specified'
+    # Get unique affiliations
+    unique_affiliations = get_unique_affiliations(work)
+    affiliations_str = ' / '.join(unique_affiliations) if unique_affiliations else 'No affiliations specified'
+    
+    # Extract funders and awards
+    awards_full, funders_full = extract_funders_and_awards(work)
+    
+    # Build funders string with awards
+    funders_parts = []
+    if awards_full:
+        for award in awards_full:
+            funder_name = award.get('funder_display_name', '')
+            award_id = award.get('funder_award_id', '')
+            if funder_name and award_id:
+                funders_parts.append(f"{funder_name} (award: {award_id})")
+            elif funder_name:
+                funders_parts.append(funder_name)
+            elif award_id:
+                funders_parts.append(f"award: {award_id}")
+    elif funders_full:
+        for funder in funders_full:
+            funder_name = funder.get('display_name', '')
+            if funder_name:
+                funders_parts.append(funder_name)
+    
+    funders_str = ' / '.join(funders_parts) if funders_parts else 'No funding information'
     
     # Extract publication info
     biblio = work.get('biblio', {})
@@ -1233,6 +1327,7 @@ def enrich_retracted_work(work: dict) -> dict:
         'author_names': author_names,
         'affiliations_full': affiliations_full,
         'affiliations_str': affiliations_str,
+        'unique_affiliations': unique_affiliations,
         'journal_name': journal_name,
         'publisher': publisher,
         'publisher_chain': publisher_chain,
@@ -1240,7 +1335,10 @@ def enrich_retracted_work(work: dict) -> dict:
         'issue': issue,
         'pages': pages_str,
         'all_countries': all_countries,
-        'is_retracted': work.get('is_retracted', False)
+        'is_retracted': work.get('is_retracted', False),
+        'awards_full': awards_full,
+        'funders_full': funders_full,
+        'funders_str': funders_str
     }
     
     return enriched
@@ -1428,6 +1526,58 @@ def group_articles_by_publisher_journal(articles: List[dict]) -> Dict[str, Dict[
             )
     
     return sort_hierarchy_by_count(hierarchy)
+
+def group_articles_by_funders(articles: List[dict]) -> Dict[str, List[dict]]:
+    """
+    Group articles by funder.
+    Returns dict: {funder_name: [articles]}
+    """
+    funder_articles = defaultdict(list)
+    
+    for article in articles:
+        funders_full = article.get('funders_full', [])
+        awards_full = article.get('awards_full', [])
+        
+        # Collect all funder names from both funders and awards
+        funder_names = set()
+        
+        # From funders
+        for funder in funders_full:
+            funder_name = funder.get('display_name', '')
+            if funder_name:
+                funder_names.add(funder_name)
+        
+        # From awards
+        for award in awards_full:
+            funder_name = award.get('funder_display_name', '')
+            if funder_name:
+                funder_names.add(funder_name)
+        
+        # If no funder names, skip this article
+        if not funder_names:
+            continue
+        
+        # Add article to each funder
+        for funder_name in funder_names:
+            # Check if article already exists for this funder
+            existing_articles = funder_articles[funder_name]
+            if not any(a.get('doi') == article.get('doi') for a in existing_articles):
+                funder_articles[funder_name].append(article)
+    
+    # Sort articles within each funder by publication date (newest first)
+    for funder in funder_articles:
+        funder_articles[funder] = sorted(
+            funder_articles[funder],
+            key=lambda x: x.get('publication_date', '0000-00-00'),
+            reverse=True
+        )
+    
+    # Sort funders by article count (descending), then alphabetically
+    sorted_funders = dict(
+        sorted(funder_articles.items(), key=lambda x: (-len(x[1]), x[0]))
+    )
+    
+    return sorted_funders
 
 # ============================================================================
 # PDF REPORT GENERATION FUNCTIONS
@@ -1808,6 +1958,26 @@ def generate_pdf_by_country_affiliation(journal_name: str, years: List[int], cou
         fontName=russian_font_name
     )
     
+    affiliations_pdf_style = ParagraphStyle(
+        'AffiliationsPDFStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=3,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
+    funders_pdf_style = ParagraphStyle(
+        'FundersPDFStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=3,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
     meta_style = ParagraphStyle(
         'MetaStyle',
         parent=styles['Normal'],
@@ -1971,6 +2141,17 @@ def generate_pdf_by_country_affiliation(journal_name: str, years: List[int], cou
                 authors = clean_text(article.get('authors_str', 'Authors not specified'), font_available)
                 story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
                 
+                # Affiliations - unique affiliations separated by /
+                unique_affiliations = article.get('unique_affiliations', [])
+                if unique_affiliations:
+                    aff_text = ' / '.join([clean_text(aff, font_available) for aff in unique_affiliations])
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Affiliations:</b> {aff_text}", affiliations_pdf_style))
+                
+                # Funders
+                funders_str = article.get('funders_str', '')
+                if funders_str and funders_str != 'No funding information':
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Funders:</b> {clean_text(funders_str, font_available)}", funders_pdf_style))
+                
                 # Journal and publisher info
                 journal = clean_text(article.get('journal_name', ''), font_available)
                 publisher = clean_text(article.get('publisher', ''), font_available)
@@ -2114,6 +2295,26 @@ def generate_pdf_by_authors(journal_name: str, years: List[int], countries: List
         fontName=russian_font_name
     )
     
+    affiliations_pdf_style = ParagraphStyle(
+        'AffiliationsPDFStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=3,
+        leftIndent=20,
+        fontName=russian_font_name
+    )
+    
+    funders_pdf_style = ParagraphStyle(
+        'FundersPDFStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=3,
+        leftIndent=20,
+        fontName=russian_font_name
+    )
+    
     meta_style = ParagraphStyle(
         'MetaStyle',
         parent=styles['Normal'],
@@ -2248,6 +2449,17 @@ def generate_pdf_by_authors(journal_name: str, years: List[int], countries: List
             
             authors = clean_text(article.get('authors_str', 'Authors not specified'), font_available)
             story.append(Paragraph(f"&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
+            
+            # Affiliations - unique affiliations separated by /
+            unique_affiliations = article.get('unique_affiliations', [])
+            if unique_affiliations:
+                aff_text = ' / '.join([clean_text(aff, font_available) for aff in unique_affiliations])
+                story.append(Paragraph(f"&nbsp;&nbsp;<b>Affiliations:</b> {aff_text}", affiliations_pdf_style))
+            
+            # Funders
+            funders_str = article.get('funders_str', '')
+            if funders_str and funders_str != 'No funding information':
+                story.append(Paragraph(f"&nbsp;&nbsp;<b>Funders:</b> {clean_text(funders_str, font_available)}", funders_pdf_style))
             
             # Journal and publisher info
             journal = clean_text(article.get('journal_name', ''), font_available)
@@ -2392,6 +2604,26 @@ def generate_pdf_by_publisher_journal(journal_name: str, years: List[int], count
     
     authors_style = ParagraphStyle(
         'AuthorsStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=3,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
+    affiliations_pdf_style = ParagraphStyle(
+        'AffiliationsPDFStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=3,
+        leftIndent=40,
+        fontName=russian_font_name
+    )
+    
+    funders_pdf_style = ParagraphStyle(
+        'FundersPDFStyle',
         parent=styles['Normal'],
         fontSize=9,
         textColor=colors.HexColor('#2C3E50'),
@@ -2561,6 +2793,17 @@ def generate_pdf_by_publisher_journal(journal_name: str, years: List[int], count
                 authors = clean_text(article.get('authors_str', 'Authors not specified'), font_available)
                 story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
                 
+                # Affiliations - unique affiliations separated by /
+                unique_affiliations = article.get('unique_affiliations', [])
+                if unique_affiliations:
+                    aff_text = ' / '.join([clean_text(aff, font_available) for aff in unique_affiliations])
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Affiliations:</b> {aff_text}", affiliations_pdf_style))
+                
+                # Funders
+                funders_str = article.get('funders_str', '')
+                if funders_str and funders_str != 'No funding information':
+                    story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<b>Funders:</b> {clean_text(funders_str, font_available)}", funders_pdf_style))
+                
                 # Publication details
                 year = article.get('publication_year', '')
                 pub_date = article.get('publication_date', '')
@@ -2610,6 +2853,357 @@ def generate_pdf_by_publisher_journal(journal_name: str, years: List[int], count
     This report contains {total_articles} retracted articles from {total_publishers} publishers.
     
     The articles are organized by publisher and journal, sorted by the number of retracted articles.
+    """
+    
+    story.append(Paragraph(conclusion_text, conclusion_style))
+    story.append(Spacer(1, 1*cm))
+    
+    # Add logo at end
+    add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
+    
+    story.append(Paragraph(f"© Chimica Techno Acta | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
+    story.append(Paragraph("Report generated using Retracted Article Detector", footer_style))
+    
+    doc.build(story)
+    return buffer.getvalue()
+
+def generate_pdf_by_funders(journal_name: str, years: List[int], countries: List[str],
+                           funder_articles: Dict[str, List[dict]], logo_path: str = None,
+                           report_title: str = "Report by Funders") -> bytes:
+    """Generate PDF report grouping articles by funder."""
+    # Register font and get availability
+    russian_font_name, font_available = register_russian_font()
+    
+    buffer = io.BytesIO()
+    
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        topMargin=1.5*cm,
+        bottomMargin=1.5*cm,
+        leftMargin=2*cm,
+        rightMargin=2*cm
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Normal'],
+        fontSize=22,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=12,
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Normal'],
+        fontSize=14,
+        textColor=colors.HexColor('#34495E'),
+        spaceAfter=8,
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    funder_style = ParagraphStyle(
+        'FunderStyle',
+        parent=styles['Normal'],
+        fontSize=16,
+        textColor=colors.HexColor('#e74c3c'),
+        spaceAfter=10,
+        spaceBefore=20,
+        fontName=russian_font_name
+    )
+    
+    article_title_style = ParagraphStyle(
+        'ArticleTitle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=5,
+        leftIndent=20,
+        fontName=russian_font_name
+    )
+    
+    authors_style = ParagraphStyle(
+        'AuthorsStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=3,
+        leftIndent=20,
+        fontName=russian_font_name
+    )
+    
+    affiliations_pdf_style = ParagraphStyle(
+        'AffiliationsPDFStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=3,
+        leftIndent=20,
+        fontName=russian_font_name
+    )
+    
+    funders_pdf_style = ParagraphStyle(
+        'FundersPDFStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=3,
+        leftIndent=20,
+        fontName=russian_font_name
+    )
+    
+    award_id_style = ParagraphStyle(
+        'AwardIDStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#2980b9'),
+        spaceAfter=3,
+        leftIndent=20,
+        fontName=russian_font_name
+    )
+    
+    meta_style = ParagraphStyle(
+        'MetaStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#27ae60'),
+        spaceAfter=2,
+        leftIndent=20,
+        fontName=russian_font_name
+    )
+    
+    toc_funder_style = ParagraphStyle(
+        'TOCFunderStyle',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.HexColor('#e74c3c'),
+        spaceAfter=6,
+        fontName=russian_font_name
+    )
+    
+    intro_style = ParagraphStyle(
+        'IntroStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=20,
+        alignment=TA_JUSTIFY,
+        fontName=russian_font_name
+    )
+    
+    footer_style = ParagraphStyle(
+        'FooterStyle',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#95A5A6'),
+        spaceBefore=15,
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    separator_style = ParagraphStyle(
+        'Separator',
+        parent=styles['Normal'],
+        fontSize=8,
+        textColor=colors.HexColor('#BDC3C7'),
+        alignment=TA_CENTER,
+        fontName=russian_font_name
+    )
+    
+    conclusion_style = ParagraphStyle(
+        'ConclusionStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#2C3E50'),
+        spaceAfter=20,
+        alignment=TA_JUSTIFY,
+        fontName=russian_font_name
+    )
+    
+    story = []
+    
+    total_articles = sum(len(articles) for articles in funder_articles.values())
+    total_funders = len(funder_articles)
+    
+    story.append(Spacer(1, 2*cm))
+    
+    # Add logo at beginning
+    add_logo_to_pdf(story, logo_path, max_width=200, max_height=200, add_spacer=True)
+    
+    story.append(Paragraph("Retracted Articles Report by Funders", title_style))
+    story.append(Paragraph(f"«{clean_text(journal_name, font_available)}»", subtitle_style))
+    story.append(Spacer(1, 1*cm))
+    
+    years_str = format_year_filter_for_filename(years)
+    countries_str = format_countries_for_filename(countries)
+    story.append(Paragraph(f"Publication period: {years_str}", subtitle_style))
+    story.append(Paragraph(f"Countries: {countries_str}", subtitle_style))
+    story.append(Spacer(1, 1.5*cm))
+    
+    intro_text = f"""
+    This report contains {total_articles} retracted articles,
+    grouped by Funder.
+    
+    This report is designed to provide information about retracted articles
+    that were funded by specific organizations. This can be used to initiate
+    questions about potential return of funds when research misconduct is identified.
+    """
+    
+    story.append(Paragraph(intro_text, intro_style))
+    story.append(Spacer(1, 1*cm))
+    
+    stats_data = [
+        ["Metric", "Value"],
+        ["Total Retracted Articles", str(total_articles)],
+        ["Unique Funders", str(total_funders)],
+        ["Report Type", report_title],
+    ]
+    
+    stats_table = Table(stats_data, colWidths=[doc.width/2.5, doc.width/3])
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e74c3c')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), russian_font_name),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#D5DBDB')),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F2F4F4')]),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    story.append(stats_table)
+    story.append(PageBreak())
+    
+    story.append(Paragraph("Table of Contents", title_style))
+    story.append(Spacer(1, 0.5*cm))
+    
+    for funder, articles in funder_articles.items():
+        article_count = len(articles)
+        anchor_id = f"funder_{hashlib.md5(funder.encode('utf-8')).hexdigest()[:8]}"
+        story.append(Paragraph(f'<a href="#{anchor_id}"><b>{clean_text(funder, font_available)}</b> — {article_count} retracted articles</a>', toc_funder_style))
+    
+    story.append(PageBreak())
+    
+    for funder, articles in funder_articles.items():
+        anchor_id = f"funder_{hashlib.md5(funder.encode('utf-8')).hexdigest()[:8]}"
+        anchor_para = Paragraph(f'<a name="{anchor_id}"/>', ParagraphStyle('AnchorStyle', parent=styles['Normal'], fontSize=1, textColor=colors.white, fontName=russian_font_name))
+        story.append(anchor_para)
+        
+        story.append(Paragraph(f"{clean_text(funder, font_available)} — {len(articles)} retracted articles", funder_style))
+        story.append(Spacer(1, 0.3*cm))
+        
+        for idx, article in enumerate(articles, 1):
+            title = clean_text(article.get('title', 'No title'), font_available)
+            story.append(Paragraph(f"&nbsp;&nbsp;{idx}. {title}", article_title_style))
+            
+            authors = clean_text(article.get('authors_str', 'Authors not specified'), font_available)
+            story.append(Paragraph(f"&nbsp;&nbsp;<b>Authors:</b> {authors}", authors_style))
+            
+            # Affiliations - unique affiliations separated by /
+            unique_affiliations = article.get('unique_affiliations', [])
+            if unique_affiliations:
+                aff_text = ' / '.join([clean_text(aff, font_available) for aff in unique_affiliations])
+                story.append(Paragraph(f"&nbsp;&nbsp;<b>Affiliations:</b> {aff_text}", affiliations_pdf_style))
+            
+            # Funders with award IDs
+            awards_full = article.get('awards_full', [])
+            funders_full = article.get('funders_full', [])
+            
+            funder_info_parts = []
+            if awards_full:
+                for award in awards_full:
+                    funder_name = award.get('funder_display_name', '')
+                    award_id = award.get('funder_award_id', '')
+                    if funder_name and award_id:
+                        funder_info_parts.append(f"{funder_name} (award: {award_id})")
+                    elif funder_name:
+                        funder_info_parts.append(funder_name)
+                    elif award_id:
+                        funder_info_parts.append(f"award: {award_id}")
+            elif funders_full:
+                for funder_item in funders_full:
+                    funder_name = funder_item.get('display_name', '')
+                    if funder_name:
+                        funder_info_parts.append(funder_name)
+            
+            if funder_info_parts:
+                funders_text = ' / '.join(funder_info_parts)
+                story.append(Paragraph(f"&nbsp;&nbsp;<b>Funders:</b> {clean_text(funders_text, font_available)}", funders_pdf_style))
+            
+            # Award IDs separately for clarity
+            if awards_full:
+                award_ids = []
+                for award in awards_full:
+                    award_id = award.get('funder_award_id', '')
+                    if award_id:
+                        award_ids.append(award_id)
+                if award_ids:
+                    award_ids_text = ' / '.join(award_ids)
+                    story.append(Paragraph(f"&nbsp;&nbsp;<b>Award IDs:</b> {clean_text(award_ids_text, font_available)}", award_id_style))
+            
+            # Journal and publisher info
+            journal = clean_text(article.get('journal_name', ''), font_available)
+            publisher = clean_text(article.get('publisher', ''), font_available)
+            
+            if journal:
+                story.append(Paragraph(f"&nbsp;&nbsp;<b>Journal:</b> {journal}", meta_style))
+            if publisher:
+                story.append(Paragraph(f"&nbsp;&nbsp;<b>Publisher:</b> {publisher}", meta_style))
+            
+            # Publication details
+            year = article.get('publication_year', '')
+            pub_date = article.get('publication_date', '')
+            volume = article.get('volume', '')
+            issue = article.get('issue', '')
+            pages = article.get('pages', '')
+            
+            meta_parts = []
+            if year:
+                meta_parts.append(f"Year: {year}")
+            if pub_date and pub_date != '0000-00-00':
+                meta_parts.append(f"Published: {pub_date}")
+            if volume:
+                meta_parts.append(f"Vol. {volume}")
+            if issue:
+                meta_parts.append(f"Iss. {issue}")
+            if pages:
+                meta_parts.append(f"pp. {pages}")
+            
+            if meta_parts:
+                story.append(Paragraph(f"&nbsp;&nbsp;{', '.join(meta_parts)}", meta_style))
+            
+            # DOI
+            doi_url = article.get('doi_url', '')
+            if doi_url:
+                doi_url_clean = clean_doi_url(doi_url)
+                story.append(Paragraph(f"&nbsp;&nbsp;<b>DOI:</b> <a href='{doi_url_clean}'>{doi_url_clean}</a>", meta_style))
+            
+            # Retraction badge
+            story.append(Paragraph(f"&nbsp;&nbsp;<font color='#e74c3c'><b>⚠️ RETRACTED</b></font>", meta_style))
+            
+            story.append(Spacer(1, 0.15*cm))
+            
+            if idx < len(articles):
+                story.append(Paragraph("&nbsp;&nbsp;" + "─" * 50, separator_style))
+                story.append(Spacer(1, 0.1*cm))
+        
+        story.append(Spacer(1, 0.3*cm))
+        story.append(PageBreak())
+    
+    story.append(Paragraph("Conclusion", title_style))
+    story.append(Spacer(1, 0.5*cm))
+    
+    conclusion_text = f"""
+    This report contains {total_articles} retracted articles from {total_funders} unique funders.
+    
+    The funders are sorted by the number of retracted articles. This information
+    can be used to identify funded research that resulted in retracted publications,
+    which may be relevant for financial audits and research integrity investigations.
     """
     
     story.append(Paragraph(conclusion_text, conclusion_style))
@@ -2878,8 +3472,22 @@ def step_analysis_results():
         if publisher:
             all_publishers.add(publisher)
     
+    # Count funders
+    all_funders = set()
+    for work in enriched_works:
+        funders_full = work.get('funders_full', [])
+        for funder in funders_full:
+            funder_name = funder.get('display_name', '')
+            if funder_name:
+                all_funders.add(funder_name)
+        awards_full = work.get('awards_full', [])
+        for award in awards_full:
+            funder_name = award.get('funder_display_name', '')
+            if funder_name:
+                all_funders.add(funder_name)
+    
     # Display metrics
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
         st.markdown(f"""
         <div class="metric-card">
@@ -2906,6 +3514,13 @@ def step_analysis_results():
         <div class="metric-card">
             <div class="metric-value">{len(all_publishers)}</div>
             <div class="metric-label">Publishers</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col5:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-value">{len(all_funders)}</div>
+            <div class="metric-label">Funders</div>
         </div>
         """, unsafe_allow_html=True)
     
@@ -2940,6 +3555,7 @@ def step_analysis_results():
     cache_key_country = f"country_{years_hash}_{countries_hash}"
     cache_key_author = f"author_{years_hash}_{countries_hash}"
     cache_key_publisher = f"publisher_{years_hash}_{countries_hash}"
+    cache_key_funders = f"funders_{years_hash}_{countries_hash}"
     
     # Generate groupings
     with st.spinner("Generating report groupings..."):
@@ -2951,6 +3567,9 @@ def step_analysis_results():
         
         # Group by Publisher -> Journal
         publisher_hierarchy = group_articles_by_publisher_journal(enriched_works)
+        
+        # Group by Funders
+        funder_articles = group_articles_by_funders(enriched_works)
     
     col_gen1, col_gen2, col_gen3 = st.columns([1, 2, 1])
     with col_gen2:
@@ -2967,7 +3586,7 @@ def step_analysis_results():
                             country_hierarchy, logo_path,
                             "Report by Country & Affiliation"
                         )
-                    progress_bar.progress(0.33)
+                    progress_bar.progress(0.25)
                     
                     status_text.text("Generating Author report...")
                     if cache_key_author not in st.session_state.pdf_cache:
@@ -2976,7 +3595,7 @@ def step_analysis_results():
                             author_articles, logo_path,
                             "Report by Author"
                         )
-                    progress_bar.progress(0.66)
+                    progress_bar.progress(0.50)
                     
                     status_text.text("Generating Publisher → Journal report...")
                     if cache_key_publisher not in st.session_state.pdf_cache:
@@ -2984,6 +3603,15 @@ def step_analysis_results():
                             journal_name, years, countries,
                             publisher_hierarchy, logo_path,
                             "Report by Publisher & Journal"
+                        )
+                    progress_bar.progress(0.75)
+                    
+                    status_text.text("Generating Funders report...")
+                    if cache_key_funders not in st.session_state.pdf_cache:
+                        st.session_state.pdf_cache[cache_key_funders] = generate_pdf_by_funders(
+                            journal_name, years, countries,
+                            funder_articles, logo_path,
+                            "Report by Funders"
                         )
                     progress_bar.progress(1.0)
                     
@@ -2996,7 +3624,7 @@ def step_analysis_results():
     
     st.markdown("---")
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown("**🌍 Report 1: Country → Affiliation**")
@@ -3088,10 +3716,40 @@ def step_analysis_results():
                     st.session_state.pdf_cache[cache_key_publisher] = pdf_data
                     st.rerun()
     
+    with col4:
+        st.markdown("**💰 Report 4: Funders**")
+        st.markdown(f"*{len(funder_articles)} funders*")
+        
+        if cache_key_funders in st.session_state.pdf_cache:
+            pdf_data = st.session_state.pdf_cache[cache_key_funders]
+        else:
+            pdf_data = None
+        
+        if pdf_data is not None:
+            filename = f"{journal_abbr}_{format_year_filter_for_filename(years)}_{format_countries_for_filename(countries)}_funders.pdf"
+            st.download_button(
+                label="📄 Download Funders Report",
+                data=pdf_data,
+                file_name=filename,
+                mime="application/pdf",
+                use_container_width=True,
+                key=f"pdf_funders_download_{cache_key_funders}"
+            )
+        else:
+            if st.button("📄 Generate Funders Report", key=f"gen_funders_{cache_key_funders}", use_container_width=True):
+                with st.spinner("Generating Funders Report..."):
+                    pdf_data = generate_pdf_by_funders(
+                        journal_name, years, countries,
+                        funder_articles, logo_path,
+                        "Report by Funders"
+                    )
+                    st.session_state.pdf_cache[cache_key_funders] = pdf_data
+                    st.rerun()
+    
     st.markdown("---")
     
     if st.session_state.all_reports_generated:
-        if all(key in st.session_state.pdf_cache for key in [cache_key_country, cache_key_author, cache_key_publisher]):
+        if all(key in st.session_state.pdf_cache for key in [cache_key_country, cache_key_author, cache_key_publisher, cache_key_funders]):
             try:
                 import zipfile
                 zip_buffer = io.BytesIO()
@@ -3102,6 +3760,8 @@ def step_analysis_results():
                                      st.session_state.pdf_cache[cache_key_author])
                     zip_file.writestr(f"{journal_abbr}_{format_year_filter_for_filename(years)}_{format_countries_for_filename(countries)}_publisher_journal.pdf", 
                                      st.session_state.pdf_cache[cache_key_publisher])
+                    zip_file.writestr(f"{journal_abbr}_{format_year_filter_for_filename(years)}_{format_countries_for_filename(countries)}_funders.pdf", 
+                                     st.session_state.pdf_cache[cache_key_funders])
                 
                 zip_data = zip_buffer.getvalue()
                 
