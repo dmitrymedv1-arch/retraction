@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 
 # App settings
 st.set_page_config(
-    page_title="Retracted Article Detector Pro*2",
+    page_title="Retracted Article Detector",
     page_icon="logo.jpg",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -2039,7 +2039,7 @@ def generate_pdf_by_country_affiliation(journal_name: str, years: List[int], cou
     add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
     
     story.append(Paragraph(f"© Chimica Techno Acta | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
-    story.append(Paragraph("Report generated using Retracted Article Detector Pro*2", footer_style))
+    story.append(Paragraph("Report generated using Retracted Article Detector", footer_style))
     
     doc.build(story)
     return buffer.getvalue()
@@ -2314,7 +2314,7 @@ def generate_pdf_by_authors(journal_name: str, years: List[int], countries: List
     add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
     
     story.append(Paragraph(f"© Chimica Techno Acta | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
-    story.append(Paragraph("Report generated using Retracted Article Detector Pro*2", footer_style))
+    story.append(Paragraph("Report generated using Retracted Article Detector", footer_style))
     
     doc.build(story)
     return buffer.getvalue()
@@ -2619,7 +2619,7 @@ def generate_pdf_by_publisher_journal(journal_name: str, years: List[int], count
     add_logo_to_pdf(story, logo_path, max_width=120, max_height=120, add_spacer=True)
     
     story.append(Paragraph(f"© Chimica Techno Acta | {datetime.now().strftime('%Y-%m-%d')}", footer_style))
-    story.append(Paragraph("Report generated using Retracted Article Detector Pro*2", footer_style))
+    story.append(Paragraph("Report generated using Retracted Article Detector", footer_style))
     
     doc.build(story)
     return buffer.getvalue()
@@ -3179,7 +3179,7 @@ def main():
     st.markdown("""
     <div class="footer">
         <p>© CTA, https://chimicatechnoacta.ru / developed by daM©</p>
-        <p style="font-size: 0.7rem; color: #aaa;">Retracted Article Detector Pro*2 with multi-report generation</p>
+        <p style="font-size: 0.7rem; color: #aaa;">Retracted Article Detector with multi-report generation</p>
     </div>
     """, unsafe_allow_html=True)
 
