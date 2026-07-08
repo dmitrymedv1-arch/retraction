@@ -376,7 +376,7 @@ MAX_DELAY = 60
 
 CACHE_DIR = Path("./cache")
 CACHE_DB = CACHE_DIR / "openalex_cache.db"
-CACHE_EXPIRY_DAYS = 30
+CACHE_EXPIRY_DAYS = 30/24/2
 
 CACHE_DIR.mkdir(exist_ok=True)
 
